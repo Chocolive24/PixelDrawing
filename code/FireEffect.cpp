@@ -44,7 +44,7 @@ bitmap_t;
  
 #pragma endregion Constants
 
-uint32_t* buffer;
+uint32_t* frameBuffer;
 
 uint32_t fire[WINDOW_WIDTH][WINDOW_HEIGHT]; 
 uint32_t palette[256];
@@ -71,7 +71,7 @@ void DrawPixel(int x, int y, uint32_t color)
     }
 
     int pixelIndex = GetPixelIndex(x, y);
-    uint32_t destColor = buffer[pixelIndex];
+    uint32_t destColor = frameBuffer[pixelIndex];
 
     float  srcAlpha  = (uint8_t) (color >> 24) / 256.f;
     uint8_t srcRed   = (uint8_t) (color >> 16);
@@ -86,7 +86,7 @@ void DrawPixel(int x, int y, uint32_t color)
     uint8_t finalGreen = (uint8_t) ((srcGreen * srcAlpha + destGreen * (1.f * srcAlpha)));
     uint8_t finalBlue  = (uint8_t) ((srcBlue * srcAlpha + destBlue * (1.f * srcAlpha)));
 
-    buffer[pixelIndex] = MFB_RGB(finalRed, finalGreen, finalBlue);
+    frameBuffer[pixelIndex] = MFB_RGB(finalRed, finalGreen, finalBlue);
     
     //buffer[GetPixelIndex(x, y)] = color;
 };
@@ -302,7 +302,7 @@ void DrawFireEffect()
     {
         for (int x = 0; x < WINDOW_WIDTH; x++)
         {
-            buffer[GetPixelIndex(x, y)] = palette[fire[x][y]];
+            frameBuffer[GetPixelIndex(x, y)] = palette[fire[x][y]];
         }
     }
 }
@@ -332,7 +332,7 @@ int main()
     // malloc alloue de la mémoire (ici 800 * 600 * 4 (4 bytes pour un int32) de mémoire)
     // buffer est un terme pour designer un ensemble de données 
     // un frame buffer contient les data des pixels de la fenêtre de jeu.
-    buffer = (uint32_t*) malloc(WINDOW_MEMORY);
+    frameBuffer = (uint32_t*) malloc(WINDOW_MEMORY);
 
     bitmap_t penguin = LoadImage("assets/Penguin.png");
 
@@ -345,7 +345,7 @@ int main()
     {
         int state;
 
-        state = mfb_update_ex(window, buffer, WINDOW_WIDTH, WINDOW_HEIGHT);
+        state = mfb_update_ex(window, frameBuffer, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         if (state < 0) 
         {
@@ -353,7 +353,7 @@ int main()
             break;
         }
 
-        memset(buffer, 0, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
+        memset(frameBuffer, 0, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
 
         // Effect Function Calls 
         // -------------------------------------------------------------------------------------------

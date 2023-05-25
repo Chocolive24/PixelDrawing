@@ -31,7 +31,15 @@ bitmap_t;
 
 #pragma endregion Colors
 
-uint32_t* buffer;
+#define CHAR_WIDTH 7
+#define CHAR_HEIGHT 9
+
+uint32_t* frameBuffer;
+uint32_t* windowBuffer;
+
+bitmap_t pixelFont;
+bitmap_t penguinSprite;
+bitmap_t enemySprite;
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -42,23 +50,23 @@ uint32_t* buffer;
 
 int GetPixelIndex(int x, int y)
 {
-    return y * WINDOW_WIDTH + x;
+    return y * FRAME_BUFFER_WIDTH + x;
 };
 
 void DrawPixel(int x, int y, uint32_t color)
 {
     // Check coords in window bounds.
-    if (x >= WINDOW_WIDTH || x < 0)
+    if (x >= FRAME_BUFFER_WIDTH || x < 0)
     {
        return;
     }
-    if (y >= WINDOW_HEIGHT || y < 0)
+    if (y >= FRAME_BUFFER_HEIGHT || y < 0)
     {
         return;
     }
 
     int pixelIndex = GetPixelIndex(x, y);
-    uint32_t destColor = buffer[pixelIndex];
+    uint32_t destColor = frameBuffer[pixelIndex];
 
     float  srcAlpha  = (uint8_t) (color >> 24) / 256.f;
     uint8_t srcRed   = (uint8_t) (color >> 16);
@@ -73,7 +81,7 @@ void DrawPixel(int x, int y, uint32_t color)
     uint8_t finalGreen = (uint8_t) ((srcGreen * srcAlpha + destGreen * (1.f * srcAlpha)));
     uint8_t finalBlue  = (uint8_t) ((srcBlue * srcAlpha + destBlue * (1.f * srcAlpha)));
 
-    buffer[pixelIndex] = MFB_RGB(finalRed, finalGreen, finalBlue);
+    frameBuffer[pixelIndex] = MFB_RGB(finalRed, finalGreen, finalBlue);
     
     //buffer[GetPixelIndex(x, y)] = color;
 };
@@ -149,15 +157,18 @@ bitmap_t LoadImage(const char* filePath)
 
 void DrawBitmap(unsigned char* img, int xStart, int yStart, int imgWidth, int imgHeight)
 {
+    xStart = (int)(xStart - imgWidth / 2);
+    yStart = (int)(yStart - imgHeight / 2);
+
     int xEnd = imgWidth + xStart;
     int yEnd = imgHeight + yStart;
-
-    int idx = 0;
 
     for (int y = yStart; y < yEnd; y++)
     {
         for (int x = xStart; x < xEnd; x++)
         {
+            int idx = ((y - yStart) * imgWidth + (x - xStart)) * 4; 
+            
             // MiniFB à la macro suivant qui fait la même chose : MFB_ARGB
             uint32_t pixelColor = (img[idx + 3] << 24 | img[idx] << 16 | img[idx + 1] << 8 | img[idx + 2]);
 
@@ -165,8 +176,6 @@ void DrawBitmap(unsigned char* img, int xStart, int yStart, int imgWidth, int im
             {
                 DrawPixel(x, y, pixelColor);
             }
-
-            idx += 4;
         }
     }
 };
@@ -206,5 +215,99 @@ void DrawScaledBitmap(unsigned char* img, int xStart, int yStart, int imgWidth, 
     }
 }
 
+void DrawChar(unsigned char* fontMap, int xStart, int yStart, int imgWidth, int xIdx, int yIdx)
+{
+    int xEnd = CHAR_WIDTH + xStart;
+    int yEnd = CHAR_HEIGHT + yStart;
+
+    for (int y = yStart + yIdx; y < yEnd + yIdx; y++)
+    {
+        for (int x = xStart + xIdx; x < xEnd + xIdx; x++)
+        {
+            int idx = ((y - yStart) * imgWidth + (x - xStart)) * 4; 
+            
+            // MiniFB à la macro suivant qui fait la même chose : MFB_ARGB
+            uint32_t pixelColor = (fontMap[idx + 3] << 24 | fontMap[idx] << 16 | fontMap[idx + 1] << 8 | fontMap[idx + 2]);
+
+            if (fontMap[idx + 3] != 0)
+            {
+                DrawPixel(x - xIdx, y - yIdx, pixelColor);
+            }
+        }
+    }
+}
+
+void resize_bitmap(uint32_t* dest, int dest_sx, int dest_sy, uint32_t* src, int src_sx, int src_sy)
+{
+    for (int y = 0; y < dest_sy; y++) {
+        for (int x = 0; x < dest_sx; x++) {
+            int src_x = x * src_sx / dest_sx;
+            int src_y = y * src_sy / dest_sy;
+            dest[y*dest_sx + x] = src[src_y*src_sx + src_x];
+        }
+    }
+}
+
 #pragma endregion Image Functions 
 
+#pragma region Font Functions
+
+void DrawText(const char* literalString, int xStart, int yStart)
+{
+    int charIdx = 0;
+    char c;
+
+    do
+    {
+        c = literalString[charIdx];
+
+        if ((int)c >= 65 && (int)c <= 90)
+        {
+            int x = ((int)c - 65) * CHAR_WIDTH;
+            int y = 0;
+
+            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, x, y);
+        }
+        else if ((int)c >= 97 && (int)c <= 122)
+        {
+            int x = ((int)c - 97) * CHAR_WIDTH;
+            int y = 12;
+
+            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, x, y);
+        }
+        else if ((int)c >= 33 && (int)c <= 63)
+        {
+            int x = ((int)c - 33) * CHAR_WIDTH;
+            int y = 22;
+
+            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, x, y);
+        }
+        else if ((int)c >= 1 && (int)c <= 5)
+        {
+            int x = ((int)c - 1) * CHAR_WIDTH;
+            int y = 32;
+
+            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, x, y);
+        }
+        else if ((int)c == 32)
+        {
+            xStart += CHAR_WIDTH;
+        }
+        else if ((int)c == 13)
+        {
+            yStart  += CHAR_HEIGHT;
+        }
+
+        charIdx++;
+
+    } while (literalString[charIdx] != '\0');
+}
+
+#pragma endregion Font Functions
+
+void LoadAllImages()
+{
+    pixelFont = LoadImage("assets/font_map.png");
+    penguinSprite = LoadImage("assets/Penguin.png");
+    enemySprite = LoadImage("assets/MaskedOrc.png");
+}
