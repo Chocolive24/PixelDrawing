@@ -40,6 +40,7 @@ uint32_t* windowBuffer;
 bitmap_t pixelFont;
 bitmap_t penguinSprite;
 bitmap_t enemySprite;
+bitmap_t moutainBgSprite;
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -178,44 +179,58 @@ void DrawBitmap(unsigned char* img, int xStart, int yStart, int imgWidth, int im
             }
         }
     }
-};
+}
 
-void DrawScaledBitmap(unsigned char* img, int xStart, int yStart, int imgWidth, int imgHeight, float scale)
+void DrawScaledBitmap(unsigned char* img, int xStart, int yStart, int imgWidth, int imgHeight, float scaleX, float scaleY)
 {
-    int scaledWidth = imgWidth * scale;
-    int scaledHeight = imgHeight * scale;
-    
-    int xEnd = xStart + scaledWidth;
-    int yEnd = yStart + scaledHeight;
-    
+    int destWidth = static_cast<int>(imgWidth * scaleX);
+    int destHeight = static_cast<int>(imgHeight * scaleY);
+
+    xStart = (int)(xStart - destWidth / 2);
+    yStart = (int)(yStart - destHeight / 2);
+
+    int xEnd = destWidth + xStart;
+    int yEnd = destHeight + yStart;
+
     for (int y = yStart; y < yEnd; y++)
     {
         for (int x = xStart; x < xEnd; x++)
         {
-            int srcX = (int)((x - xStart) / scale);
-            int srcY = (int)((y - yStart) / scale);
-            
+            int srcX = static_cast<int>((x - xStart) / scaleX);
+            int srcY = static_cast<int>((y - yStart) / scaleY);
+
             if (srcX >= 0 && srcX < imgWidth && srcY >= 0 && srcY < imgHeight)
             {
-                int srcIdx = (srcY * imgWidth + srcX) * 4;
-                uint32_t pixelColor = (img[srcIdx + 3] << 24 | img[srcIdx] << 16 | img[srcIdx + 1] << 8 | img[srcIdx + 2]);
-                
-                if (img[srcIdx + 3] != 0)
+                int idx = (srcY * imgWidth + srcX) * 4; 
+
+                // MiniFB à la macro suivant qui fait la même chose : MFB_ARGB
+                uint32_t pixelColor = (img[idx + 3] << 24 | img[idx] << 16 | img[idx + 1] << 8 | img[idx + 2]);
+
+                if (img[idx + 3] != 0)
                 {
                     DrawPixel(x, y, pixelColor);
                 }
-            }
-            else
-            {
-                // Handle cases when the rotated pixel falls outside the source image
-                // You can set a default color or leave it as per your requirements.
-                DrawPixel(x, y, 0x00000000); // Assuming black color (alpha = 0) for pixels outside the image
             }
         }
     }
 }
 
-void DrawChar(unsigned char* fontMap, int xStart, int yStart, int imgWidth, int xIdx, int yIdx)
+void resize_bitmap(uint32_t* dest, int dest_sx, int dest_sy, uint32_t* src, int src_sx, int src_sy)
+{
+    for (int y = 0; y < dest_sy; y++) {
+        for (int x = 0; x < dest_sx; x++) {
+            int src_x = x * src_sx / dest_sx;
+            int src_y = y * src_sy / dest_sy;
+            dest[y*dest_sx + x] = src[src_y*src_sx + src_x];
+        }
+    }
+}
+
+#pragma endregion Image Functions 
+
+#pragma region Font Functions
+
+void DrawChar(unsigned char* fontMap, int xStart, int yStart, int imgWidth, int imgHeight, int xIdx, int yIdx)
 {
     int xEnd = CHAR_WIDTH + xStart;
     int yEnd = CHAR_HEIGHT + yStart;
@@ -237,25 +252,15 @@ void DrawChar(unsigned char* fontMap, int xStart, int yStart, int imgWidth, int 
     }
 }
 
-void resize_bitmap(uint32_t* dest, int dest_sx, int dest_sy, uint32_t* src, int src_sx, int src_sy)
-{
-    for (int y = 0; y < dest_sy; y++) {
-        for (int x = 0; x < dest_sx; x++) {
-            int src_x = x * src_sx / dest_sx;
-            int src_y = y * src_sy / dest_sy;
-            dest[y*dest_sx + x] = src[src_y*src_sx + src_x];
-        }
-    }
-}
-
-#pragma endregion Image Functions 
-
-#pragma region Font Functions
-
 void DrawText(const char* literalString, int xStart, int yStart)
 {
     int charIdx = 0;
     char c;
+
+    int textWidth = strlen(literalString) * 7;
+
+    xStart = xStart - (int)(textWidth / 2) - 7;
+    yStart = yStart - (int)(9 / 2);
 
     do
     {
@@ -266,28 +271,28 @@ void DrawText(const char* literalString, int xStart, int yStart)
             int x = ((int)c - 65) * CHAR_WIDTH;
             int y = 0;
 
-            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, x, y);
+            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, pixelFont.pixel_size_y, x, y);
         }
         else if ((int)c >= 97 && (int)c <= 122)
         {
             int x = ((int)c - 97) * CHAR_WIDTH;
             int y = 12;
 
-            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, x, y);
+            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, pixelFont.pixel_size_y, x, y);
         }
         else if ((int)c >= 33 && (int)c <= 63)
         {
             int x = ((int)c - 33) * CHAR_WIDTH;
             int y = 22;
 
-            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, x, y);
+            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, pixelFont.pixel_size_y, x, y);
         }
         else if ((int)c >= 1 && (int)c <= 5)
         {
             int x = ((int)c - 1) * CHAR_WIDTH;
             int y = 32;
 
-            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, x, y);
+            DrawChar((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, pixelFont.pixel_size_y, x, y);
         }
         else if ((int)c == 32)
         {
@@ -310,4 +315,5 @@ void LoadAllImages()
     pixelFont = LoadImage("assets/font_map.png");
     penguinSprite = LoadImage("assets/Penguin.png");
     enemySprite = LoadImage("assets/MaskedOrc.png");
+    moutainBgSprite = LoadImage("assets/mountain.png");
 }
