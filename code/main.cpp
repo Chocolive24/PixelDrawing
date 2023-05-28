@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include <iostream>
 #include <string.h>
 #include <malloc.h>
 #include <MiniFB.h>
+#include <cstdlib>
 
 // #define se passe avant la compilation. Ca va remplacer tous les noms de variables par les valeurs qu'on leur donne.
 // Window constants 
@@ -11,7 +11,7 @@
 #define WINDOW_FAC 4
 
 #define FRAME_BUFFER_WIDTH 200
-#define FRAME_BUFFER_HEIGHT 100
+#define FRAME_BUFFER_HEIGHT 120
 
 #define WINDOW_WIDTH (FRAME_BUFFER_WIDTH * WINDOW_FAC)
 #define WINDOW_HEIGHT (FRAME_BUFFER_HEIGHT * WINDOW_FAC)
@@ -82,15 +82,17 @@ Player player
 
 Enemy enemies[10];
 int enemyCount;
-int spawnTimeMultiplicator = 3;
+int spawnTimeMultiplicator = 1;
 
-int scoreSpeed = 4;
+int scoreSpeed = 5;
 int frameCounter;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Functions 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+int GetRandomInt(int min, int max);
 
 #pragma region Player Functions
 
@@ -118,7 +120,7 @@ void SpawnEnemy(int xStart, int yStart)
         enemy.sprite = enemySprite, 
         enemy.xPos = xStart, enemy.yPos = yStart,
         enemy.halfWidth = enemy.sprite.pixel_size_x / 2, enemy.halfHeight = enemy.sprite.pixel_size_y / 2,
-        enemy.speed = ((int)(player.score / 500)) + 1
+        enemy.speed = ((int)(player.score / 500)) + 2
     };
 
     enemies[enemyCount] = enemy;
@@ -207,6 +209,11 @@ void HandleInputs()
 
 #pragma endregion Input Functions
 
+int GetRandomInt(int min, int max)
+{
+    return min + (rand() % max);
+}
+
 void Start()
 {
     printf("Hello World \n");
@@ -227,6 +234,8 @@ void Start()
     mfb_set_keyboard_callback(window, OnKeyboardEvent);
 
     LoadAllImages();
+
+    srand(time(0)); // allows you to generate a random number over time with the rand function 
 }
 
 void HandleJump()
@@ -284,8 +293,6 @@ void UpdateGame()
         enemy->speed += player.score % 500 == 0 && player.score > 0 ? 1 : 0;
         enemy->xPos -= gameOver ? 0 : enemy->speed;
 
-        printf("Nbr %i SPEED %i \n", i, enemy->speed);
-
         DrawBitmap((unsigned char*)enemy->sprite.pixels, enemy->xPos, enemy->yPos, enemy->sprite.pixel_size_x, enemy->sprite.pixel_size_y);
         
         if (enemy->xPos + (int)enemy->sprite.pixel_size_x / 2 < 0)
@@ -298,9 +305,9 @@ void UpdateGame()
 
     DrawHorizontalLine(0, FRAME_BUFFER_WIDTH - 1, 64, RED);
     DrawHorizontalLine(0, FRAME_BUFFER_WIDTH - 1, 80, 0xFFFFAA00);
-    DrawHorizontalLine(0, FRAME_BUFFER_WIDTH - 1, 100, GREEN);
+    DrawHorizontalLine(0, FRAME_BUFFER_WIDTH - 1, 100, WHITE);
 
-    DrawScaledBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y, 0.5f, 0.5f);
+    DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y);
 
     DrawText(scoreText, scoreTextPosX, scoreTextPosY);
 
@@ -310,8 +317,9 @@ void UpdateGame()
 
         if (frameCounter >= 60 * spawnTimeMultiplicator)
         {
+           
             SpawnEnemy(FRAME_BUFFER_WIDTH + 20, 90);
-
+            
             frameCounter = 0;
         }
 
@@ -324,7 +332,10 @@ void UpdateGame()
             if (player.score % 100 == 0)
             {
                 scoreSpeed++;
-                spawnTimeMultiplicator--;
+                if (spawnTimeMultiplicator > 1)
+                {
+                    spawnTimeMultiplicator--;
+                }
             }
 
             if (player.score == 10 || player.score == 100 ||player.score == 1000)
