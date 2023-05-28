@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
-#include <MiniFB.h>
-#include <cstdlib>
+#include <random>
+
 
 // #define se passe avant la compilation. Ca va remplacer tous les noms de variables par les valeurs qu'on leur donne.
 // Window constants 
@@ -21,6 +21,7 @@
 #define COLLISION_OFFSET 2 // Amount to subtract from collision detection pixels
 
 #include "Drawing.cpp"
+
 
 // Structs
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -91,8 +92,6 @@ int frameCounter;
 
 // Functions 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-int GetRandomInt(int min, int max);
 
 #pragma region Player Functions
 
@@ -185,6 +184,7 @@ void HandleInputs()
             mustApplyGravity = false;
             scoreSpeed = 4;
             frameCounter = 0;
+            scoreTextPosX = 36;
 
             SpawnEnemy(FRAME_BUFFER_WIDTH + 50, 90);
         }
@@ -209,11 +209,6 @@ void HandleInputs()
 
 #pragma endregion Input Functions
 
-int GetRandomInt(int min, int max)
-{
-    return min + (rand() % max);
-}
-
 void Start()
 {
     printf("Hello World \n");
@@ -234,8 +229,6 @@ void Start()
     mfb_set_keyboard_callback(window, OnKeyboardEvent);
 
     LoadAllImages();
-
-    srand(time(0)); // allows you to generate a random number over time with the rand function 
 }
 
 void HandleJump()
@@ -274,9 +267,13 @@ bool IsCollisionDetected(Player &player, Enemy &enemy)
 
 void UpdateTitleScreen()
 {
-    DrawText("press space", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 3));
-    DrawText("to start", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, ((int)(FRAME_BUFFER_HEIGHT / 3)) + 9);
-    DrawText("press escape to exit", (int)(FRAME_BUFFER_WIDTH / 2), 80); 
+    DrawText("press space", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 4));
+    DrawText("to start", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, ((int)(FRAME_BUFFER_HEIGHT / 4)) + 9);
+    DrawEmptyRect(55, ((int)(FRAME_BUFFER_HEIGHT / 4)) - 10, 90, 28, WHITE);
+
+    DrawText("press escape", (int)(FRAME_BUFFER_WIDTH / 2), 90); 
+    DrawText("to exit", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, 99); 
+    DrawEmptyRect(55, 90 - 10, 90, 28, WHITE);
 }
 
 void UpdateGame()
@@ -350,7 +347,9 @@ void UpdateGame()
     }
     else 
     {
-        DrawText("Game Over", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 3));
+        DrawText("Game Over", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 3) + 10);
+        DrawText("press space", (int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 20);
+        DrawText("to restart", (int)(FRAME_BUFFER_WIDTH / 2),  ((int)(FRAME_BUFFER_HEIGHT / 3)) + 29);
     }
 }
 

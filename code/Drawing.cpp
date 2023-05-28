@@ -66,24 +66,26 @@ void DrawPixel(int x, int y, uint32_t color)
         return;
     }
 
-    int pixelIndex = GetPixelIndex(x, y);
-    uint32_t destColor = frameBuffer[pixelIndex];
+    // int pixelIndex = GetPixelIndex(x, y);
+    // uint32_t destColor = frameBuffer[pixelIndex];
 
-    float  srcAlpha  = (uint8_t) (color >> 24) / 256.f;
-    uint8_t srcRed   = (uint8_t) (color >> 16);
-    uint8_t srcGreen = (uint8_t) (color >> 8);
-    uint8_t srcBlue  = (uint8_t) (color);
+    // float  srcAlpha  = (uint8_t) (color >> 24) / 256.f;
+    // uint8_t srcRed   = (uint8_t) (color >> 16);
+    // uint8_t srcGreen = (uint8_t) (color >> 8);
+    // uint8_t srcBlue  = (uint8_t) (color);
 
-    uint8_t destRed   = (uint8_t) (destColor >> 16);
-    uint8_t destGreen = (uint8_t) (destColor >> 8);
-    uint8_t destBlue  = (uint8_t) (destColor);
+    // uint8_t destRed   = (uint8_t) (destColor >> 16);
+    // uint8_t destGreen = (uint8_t) (destColor >> 8);
+    // uint8_t destBlue  = (uint8_t) (destColor);
 
-    uint8_t finalRed   = (uint8_t) ((srcRed * srcAlpha + destRed * (1.f * srcAlpha)));
-    uint8_t finalGreen = (uint8_t) ((srcGreen * srcAlpha + destGreen * (1.f * srcAlpha)));
-    uint8_t finalBlue  = (uint8_t) ((srcBlue * srcAlpha + destBlue * (1.f * srcAlpha)));
+    // uint8_t finalRed   = (uint8_t) ((srcRed * srcAlpha + destRed * (1.f * srcAlpha)));
+    // uint8_t finalGreen = (uint8_t) ((srcGreen * srcAlpha + destGreen * (1.f * srcAlpha)));
+    // uint8_t finalBlue  = (uint8_t) ((srcBlue * srcAlpha + destBlue * (1.f * srcAlpha)));
 
-    frameBuffer[pixelIndex] = MFB_RGB(finalRed, finalGreen, finalBlue);
+    // frameBuffer[pixelIndex] = MFB_RGB(finalRed, finalGreen, finalBlue);
     
+    frameBuffer[GetPixelIndex(x, y)] = color;
+
     //buffer[GetPixelIndex(x, y)] = color;
 };
 
@@ -109,6 +111,9 @@ void DrawVerticalLine(int x, int yStart, int yEnd, uint32_t color)
 
 void DrawFullRect(int xStart, int yStart, int width, int height, uint32_t color)
 {
+    xStart = (int)(xStart - width / 2);
+    yStart = (int)(yStart - height / 2);
+
     int xEnd = width + xStart;
     int yEnd = height + yStart;
 
@@ -124,13 +129,15 @@ void DrawFullRect(int xStart, int yStart, int width, int height, uint32_t color)
 
 void DrawEmptyRect(int xStart, int yStart, int width, int height, uint32_t color)
 {
+    
+
     int xEnd = width + xStart;
     int yEnd = height + yStart;
 
     DrawHorizontalLine(xStart, xEnd, yStart, color);
     DrawVerticalLine(xStart, yStart, yEnd, color);
     DrawVerticalLine(xEnd, yStart, yEnd, color);
-    DrawHorizontalLine(xStart, xEnd, yEnd, color);
+    DrawHorizontalLine(xStart, xEnd + 1, yEnd, WHITE);
 };
 
 #pragma endregion Shape Drawing Functions

@@ -1,5 +1,4 @@
 #include <random>
-#include <stdio.h>
 
 // Functions ----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -25,5 +24,5 @@ int GetARandomNbr(int min, int max)
 
 int main()
 {
-    printf("%i ", GetARandomNbr(1, 5000));
+    
 }
