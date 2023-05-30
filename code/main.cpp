@@ -8,24 +8,10 @@
 // Window constants 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-#define WINDOW_FAC 4
-
-#define FRAME_BUFFER_WIDTH 200
-#define FRAME_BUFFER_HEIGHT 120
-
-#define WINDOW_WIDTH (FRAME_BUFFER_WIDTH * WINDOW_FAC)
-#define WINDOW_HEIGHT (FRAME_BUFFER_HEIGHT * WINDOW_FAC)
-
-#define WINDOW_MEMORY (WINDOW_WIDTH * WINDOW_HEIGHT * 4)
-
-#define COLLISION_OFFSET 2 // Amount to subtract from collision detection pixels
-
 #include "Drawing.cpp"
-#include "Ground.cpp"
+#include "Background.cpp"
 #include "Enemy.cpp"
 #include "Utility.cpp"
-
-
 
 // Structs
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -64,6 +50,11 @@ bool gameOver = false;
 
 bool mustApplyGravity = false;
 
+int startGameSpeed = 2;
+float gameSpeed = startGameSpeed;
+int   adjustedGameSpeed = gameSpeed;
+float remainingPixelToParcour;
+
 char scoreText[15];
 int scoreTextPosX = 36, scoreTextPosY = 0.1 * FRAME_BUFFER_HEIGHT;
 
@@ -78,13 +69,9 @@ Player player
     player.score = 0
 };
 
-
-
-int scoreSpeed = 10;
+int startScoreSpeed = 10;
+int scoreSpeed = startScoreSpeed;
 int frameCounter;
-
-bitmap_t penguinSprite;
-
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -103,7 +90,28 @@ void Jump(Player& player)
 
 #pragma endregion Player Functions
 
+void RestartGame()
+{
+    gameOver = false;
 
+    gameSpeed = startGameSpeed;
+
+    for (int i = 0; i < enemyCount; i++)
+    {
+        enemies[i] = enemies[enemyCount-1];
+        enemyCount--;
+        i--;
+    }
+
+    player.score = 0;
+    player.yPos = player.yStartPos;
+    player.isJumping = false;
+
+    mustApplyGravity = false;
+    scoreSpeed = startScoreSpeed;
+    frameCounter = 0;
+    scoreTextPosX = 36;
+}
 
 #pragma region Input Functions
 
@@ -145,25 +153,7 @@ void HandleInputs()
         }
         else if (gameOver)
         {
-            gameOver = false;
-
-            for (int i = 0; i < enemyCount; i++)
-            {
-                enemies[i] = enemies[enemyCount-1];
-                enemyCount--;
-                i--;
-            }
-
-            player.score = 0;
-            player.yPos = player.yStartPos;
-            player.isJumping = false;
-
-            mustApplyGravity = false;
-            scoreSpeed = 4;
-            frameCounter = 0;
-            scoreTextPosX = 36;
-
-            SpawnEnemy(FRAME_BUFFER_WIDTH + 50, 90, player.score);
+            RestartGame();
         }
     }
     if (OnKeyPressed(KB_KEY_ESCAPE))
@@ -208,7 +198,7 @@ void Start()
     // Providing a seed value
 	srand((unsigned int) time(NULL));
 
-    CreateFirstGroundTiles();
+    CreateBackground();
 }
 
 void HandleJump()
@@ -258,7 +248,10 @@ void UpdateTitleScreen()
 
 void UpdateGame()
 {
-    DrawGround(gameOver);
+    adjustedGameSpeed = remainingPixelToParcour >= 1 ? (int)gameSpeed + remainingPixelToParcour-- : (int)gameSpeed;
+    remainingPixelToParcour += gameSpeed - (int)gameSpeed;
+
+    //adjustedGameSpeed <= gameSpeed ? printf("%i \n", adjustedGameSpeed) : printf("--- %i \n", adjustedGameSpeed);
 
     for(int i = 0; i < enemyCount; i++)
     {
@@ -269,10 +262,8 @@ void UpdateGame()
             gameOver = true;
         }
 
-        
-        enemy->xPos -= gameOver ? 0 : enemy->speed;
-        
-       
+        enemy->xPos -= gameOver ? 0 : adjustedGameSpeed;
+
         DrawBitmap((unsigned char*)enemy->sprite.pixels, enemy->xPos, enemy->yPos, enemy->sprite.pixel_size_x, enemy->sprite.pixel_size_y);
         
         if (enemy->xPos + (int)enemy->sprite.pixel_size_x / 2 < 0)
@@ -283,36 +274,25 @@ void UpdateGame()
         }
     }
 
-    
-
-    // for (int k = 0; k < FRAME_BUFFER_WIDTH; k += FRAME_BUFFER_WIDTH / 10)
-    // {
-    //     for (int y = FRAME_BUFFER_HEIGHT - 20; y < FRAME_BUFFER_HEIGHT; y ++)
-    //     {
-    //         for (int x = k; x < k + FRAME_BUFFER_WIDTH / 10; x++)
-    //         {
-    //             DrawPixel(x, y, GREEN);
-    //         }
-    //     }
-    // }
-
-    DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y);
-
     DrawText(scoreText, scoreTextPosX, scoreTextPosY);
 
     if (!gameOver)
     {
         HandleJump();
 
-        if (frameCounter >= 60)
+        int tmp = GetRandomNbr(50, 60);
+
+        if (frameCounter >= tmp)
         {
-            if (GetRandomNbr(1, 3) == 3)
+            printf("%i \n", tmp);
+
+            if (GetRandomNbr(1, 5) == 5)
             {
-                SpawnEnemy(FRAME_BUFFER_WIDTH + GetRandomNbr(0, 20), 70, player.score);
+                SpawnEnemy(FRAME_BUFFER_WIDTH + GetRandomNbr(20, 50), 70, player.score);
             }
             else 
             {
-                SpawnEnemy(FRAME_BUFFER_WIDTH + GetRandomNbr(0, 20), 90, player.score);
+                SpawnEnemy(FRAME_BUFFER_WIDTH + GetRandomNbr(20, 50), 90, player.score);
             }
 
             frameCounter = 0;
@@ -323,6 +303,12 @@ void UpdateGame()
         if (frameCounter % frameToUpdateScore == 0)
         {
             player.score ++;
+
+            if (player.score % 50 == 0)
+            {
+                gameSpeed += 0.2f;
+                adjustedGameSpeed = (int)gameSpeed;
+            }
 
             if (player.score % 100 == 0)
             {
@@ -341,9 +327,10 @@ void UpdateGame()
     }
     else 
     {
-        DrawText("Game Over", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 3));
-        DrawText("press space", (int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 20);
-        DrawText("to restart", (int)(FRAME_BUFFER_WIDTH / 2),  ((int)(FRAME_BUFFER_HEIGHT / 3)) + 29);
+        DrawFullRect((int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15, 90, 50, BLACK);
+        DrawTextWithColor("Game Over", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 3), RED);
+        DrawTextWithColor("press space", (int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 20, RED);
+        DrawTextWithColor("to restart", (int)(FRAME_BUFFER_WIDTH / 2),  ((int)(FRAME_BUFFER_HEIGHT / 3)) + 29, RED);
     }
 }
 
@@ -369,6 +356,9 @@ void Update()
 
         HandleInputs();
 
+        DrawBackground(gameSpeed, adjustedGameSpeed, gameOver, gameStarted);
+        DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y);
+
         if (!gameStarted)
         {
             UpdateTitleScreen();
@@ -377,7 +367,7 @@ void Update()
         {
             UpdateGame();
         }
-
+        
     } while(mfb_wait_sync(window));
 }
 

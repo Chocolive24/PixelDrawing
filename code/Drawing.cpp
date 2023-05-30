@@ -7,6 +7,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include "Utility.cpp"
+
 // Structs 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -245,6 +247,25 @@ void DrawBitmapInRange(unsigned char* fontMap, int xStart, int yStart, int imgWi
     }
 }
 
+void DrawBitmapInRangeWithColor(unsigned char* fontMap, int xStart, int yStart, int imgWidth, int imgHeight, int xIdx, int yIdx, uint32_t color)
+{
+    int xEnd = CHAR_WIDTH + xStart;
+    int yEnd = CHAR_HEIGHT + yStart;
+
+    for (int y = yStart + yIdx; y < yEnd + yIdx; y++)
+    {
+        for (int x = xStart + xIdx; x < xEnd + xIdx; x++)
+        {
+            int idx = ((y - yStart) * imgWidth + (x - xStart)) * 4; 
+
+            if (fontMap[idx + 3] != 0)
+            {
+                DrawPixel(x - xIdx, y - yIdx, color);
+            }
+        }
+    }
+}
+
 void resize_bitmap(uint32_t* dest, int dest_sx, int dest_sy, uint32_t* src, int src_sx, int src_sy)
 {
     for (int y = 0; y < dest_sy; y++) {
@@ -307,6 +328,68 @@ void DrawText(const char* literalString, int xStart, int yStart)
             int y = 32;
 
             DrawBitmapInRange((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, pixelFont.pixel_size_y, x, y);
+        }
+        else if ((int)c == 32)
+        {
+            xStart += CHAR_WIDTH;
+        }
+        else if ((int)c == 13)
+        {
+            yStart  += CHAR_HEIGHT;
+        }
+
+        charIdx++;
+
+    } while (literalString[charIdx] != '\0');
+}
+
+void DrawTextWithColor(const char* literalString, int xStart, int yStart, uint32_t color)
+{
+    if (!isFontLoaded)
+    {
+        pixelFont = LoadImage("assets/font_map.png");
+        isFontLoaded = true;
+    }
+
+    int charIdx = 0;
+    char c;
+
+    int textWidth = strlen(literalString) * 7;
+
+    xStart = xStart - (int)(textWidth / 2) - 7;
+    yStart = yStart - (int)(9 / 2);
+
+    do
+    {
+        c = literalString[charIdx];
+
+        if ((int)c >= 65 && (int)c <= 90)
+        {
+            int x = ((int)c - 65) * CHAR_WIDTH;
+            int y = 0;
+
+            DrawBitmapInRangeWithColor((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, pixelFont.pixel_size_y, x, y, color);
+        }
+        else if ((int)c >= 97 && (int)c <= 122)
+        {
+            int x = ((int)c - 97) * CHAR_WIDTH;
+            int y = 12;
+
+            DrawBitmapInRangeWithColor((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, pixelFont.pixel_size_y, x, y, color);
+        }
+        else if ((int)c >= 33 && (int)c <= 63)
+        {
+            int x = ((int)c - 33) * CHAR_WIDTH;
+            int y = 22;
+
+            DrawBitmapInRangeWithColor((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, pixelFont.pixel_size_y, x, y, color);
+        }
+        else if ((int)c >= 1 && (int)c <= 5)
+        {
+            int x = ((int)c - 1) * CHAR_WIDTH;
+            int y = 32;
+
+            DrawBitmapInRangeWithColor((unsigned char*)pixelFont.pixels, xStart += 7, yStart, pixelFont.pixel_size_x, pixelFont.pixel_size_y, x, y, color);
         }
         else if ((int)c == 32)
         {
