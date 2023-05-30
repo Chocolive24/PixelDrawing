@@ -1,28 +1,16 @@
+#pragma once 
+
 #include <random>
 
 // Functions ----------------------------------------------------------------------------------------------------------------------------------------------------
 
-#pragma region Utility Functions ---------------------------------------------------------------------------------------------------
-
-int GetARandomNbr(int min, int max)
+/// @brief Generate a rnd nbr.
+/// @param min The starting point for the range of random numbers
+/// @param maxMinusMin The number of values between first and the last possible random number including the limits.
+/// @return 
+int GetRandomNbr(int min, int maxMinusMin)
 {
-    // Seed the random number generator
-    std::random_device rd;
-    std::mt19937 generator(rd());
-
-    // Create a distribution for the range
-    std::uniform_int_distribution<int> distribution(min, max);
-
-    int nbr = distribution(generator);
-
-    printf("%i \n", nbr);
-
+    int nbr = min + (rand() % maxMinusMin);
+    //printf("%i \n", nbr);
     return nbr;
-};
-
-#pragma endregion Utility Functions
-
-int main()
-{
-    
 }

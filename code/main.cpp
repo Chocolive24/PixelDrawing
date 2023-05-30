@@ -21,6 +21,10 @@
 #define COLLISION_OFFSET 2 // Amount to subtract from collision detection pixels
 
 #include "Drawing.cpp"
+#include "Ground.cpp"
+#include "Enemy.cpp"
+#include "Utility.cpp"
+
 
 
 // Structs
@@ -43,14 +47,7 @@ typedef struct Player
 }
 Player;
 
-typedef struct Enemy
-{
-    bitmap_t sprite;
-    int xPos, yPos;
-    int halfWidth, halfHeight;
-    int speed;
-}
-Enemy;
+
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -81,12 +78,13 @@ Player player
     player.score = 0
 };
 
-Enemy enemies[10];
-int enemyCount;
-int spawnTimeMultiplicator = 1;
 
-int scoreSpeed = 5;
+
+int scoreSpeed = 10;
 int frameCounter;
+
+bitmap_t penguinSprite;
+
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -105,28 +103,7 @@ void Jump(Player& player)
 
 #pragma endregion Player Functions
 
-#pragma region Enemy Functions
 
-void SpawnEnemy(int xStart, int yStart)
-{
-    if (enemyCount == 10)
-    {
-        return;
-    }
-
-    Enemy enemy 
-    { 
-        enemy.sprite = enemySprite, 
-        enemy.xPos = xStart, enemy.yPos = yStart,
-        enemy.halfWidth = enemy.sprite.pixel_size_x / 2, enemy.halfHeight = enemy.sprite.pixel_size_y / 2,
-        enemy.speed = ((int)(player.score / 500)) + 2
-    };
-
-    enemies[enemyCount] = enemy;
-    enemyCount++;
-}
-
-#pragma endregion Enemy Functions
 
 #pragma region Input Functions
 
@@ -164,7 +141,7 @@ void HandleInputs()
         else if (!gameStarted)
         {
             gameStarted = true;
-            SpawnEnemy(FRAME_BUFFER_WIDTH + 50, 90);
+            SpawnEnemy(FRAME_BUFFER_WIDTH + 50, 90, player.score);
         }
         else if (gameOver)
         {
@@ -186,7 +163,7 @@ void HandleInputs()
             frameCounter = 0;
             scoreTextPosX = 36;
 
-            SpawnEnemy(FRAME_BUFFER_WIDTH + 50, 90);
+            SpawnEnemy(FRAME_BUFFER_WIDTH + 50, 90, player.score);
         }
     }
     if (OnKeyPressed(KB_KEY_ESCAPE))
@@ -228,7 +205,10 @@ void Start()
 
     mfb_set_keyboard_callback(window, OnKeyboardEvent);
 
-    LoadAllImages();
+    // Providing a seed value
+	srand((unsigned int) time(NULL));
+
+    CreateFirstGroundTiles();
 }
 
 void HandleJump()
@@ -269,15 +249,17 @@ void UpdateTitleScreen()
 {
     DrawText("press space", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 4));
     DrawText("to start", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, ((int)(FRAME_BUFFER_HEIGHT / 4)) + 9);
-    DrawEmptyRect(55, ((int)(FRAME_BUFFER_HEIGHT / 4)) - 10, 90, 28, WHITE);
+    DrawEmptyRect(55, ((int)(FRAME_BUFFER_HEIGHT / 4)) - 11, 90, 28, WHITE);
 
     DrawText("press escape", (int)(FRAME_BUFFER_WIDTH / 2), 90); 
     DrawText("to exit", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, 99); 
-    DrawEmptyRect(55, 90 - 10, 90, 28, WHITE);
+    DrawEmptyRect(55, 90 - 11, 90, 28, WHITE);
 }
 
 void UpdateGame()
 {
+    DrawGround(gameOver);
+
     for(int i = 0; i < enemyCount; i++)
     {
         Enemy* enemy = &enemies[i];
@@ -287,9 +269,10 @@ void UpdateGame()
             gameOver = true;
         }
 
-        enemy->speed += player.score % 500 == 0 && player.score > 0 ? 1 : 0;
+        
         enemy->xPos -= gameOver ? 0 : enemy->speed;
-
+        
+       
         DrawBitmap((unsigned char*)enemy->sprite.pixels, enemy->xPos, enemy->yPos, enemy->sprite.pixel_size_x, enemy->sprite.pixel_size_y);
         
         if (enemy->xPos + (int)enemy->sprite.pixel_size_x / 2 < 0)
@@ -300,9 +283,18 @@ void UpdateGame()
         }
     }
 
-    DrawHorizontalLine(0, FRAME_BUFFER_WIDTH - 1, 64, RED);
-    DrawHorizontalLine(0, FRAME_BUFFER_WIDTH - 1, 80, 0xFFFFAA00);
-    DrawHorizontalLine(0, FRAME_BUFFER_WIDTH - 1, 100, WHITE);
+    
+
+    // for (int k = 0; k < FRAME_BUFFER_WIDTH; k += FRAME_BUFFER_WIDTH / 10)
+    // {
+    //     for (int y = FRAME_BUFFER_HEIGHT - 20; y < FRAME_BUFFER_HEIGHT; y ++)
+    //     {
+    //         for (int x = k; x < k + FRAME_BUFFER_WIDTH / 10; x++)
+    //         {
+    //             DrawPixel(x, y, GREEN);
+    //         }
+    //     }
+    // }
 
     DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y);
 
@@ -312,11 +304,17 @@ void UpdateGame()
     {
         HandleJump();
 
-        if (frameCounter >= 60 * spawnTimeMultiplicator)
+        if (frameCounter >= 60)
         {
-           
-            SpawnEnemy(FRAME_BUFFER_WIDTH + 20, 90);
-            
+            if (GetRandomNbr(1, 3) == 3)
+            {
+                SpawnEnemy(FRAME_BUFFER_WIDTH + GetRandomNbr(0, 20), 70, player.score);
+            }
+            else 
+            {
+                SpawnEnemy(FRAME_BUFFER_WIDTH + GetRandomNbr(0, 20), 90, player.score);
+            }
+
             frameCounter = 0;
         }
 
@@ -329,10 +327,6 @@ void UpdateGame()
             if (player.score % 100 == 0)
             {
                 scoreSpeed++;
-                if (spawnTimeMultiplicator > 1)
-                {
-                    spawnTimeMultiplicator--;
-                }
             }
 
             if (player.score == 10 || player.score == 100 ||player.score == 1000)
@@ -347,7 +341,7 @@ void UpdateGame()
     }
     else 
     {
-        DrawText("Game Over", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 3) + 10);
+        DrawText("Game Over", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 3));
         DrawText("press space", (int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 20);
         DrawText("to restart", (int)(FRAME_BUFFER_WIDTH / 2),  ((int)(FRAME_BUFFER_HEIGHT / 3)) + 29);
     }
