@@ -3,11 +3,6 @@
 #include <malloc.h>
 #include <random>
 
-
-// #define se passe avant la compilation. Ca va remplacer tous les noms de variables par les valeurs qu'on leur donne.
-// Window constants 
-// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 #include "Drawing.cpp"
 #include "Background.cpp"
 #include "Enemy.cpp"
@@ -32,8 +27,6 @@ typedef struct Player
     }
 }
 Player;
-
-
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -71,7 +64,7 @@ Player player
 
 int startScoreSpeed = 10;
 int scoreSpeed = startScoreSpeed;
-int frameCounter;
+int frameCounter, rndFrame;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -90,7 +83,7 @@ void Jump(Player& player)
 
 #pragma endregion Player Functions
 
-void RestartGame()
+void Restart()
 {
     gameOver = false;
 
@@ -149,11 +142,10 @@ void HandleInputs()
         else if (!gameStarted)
         {
             gameStarted = true;
-            SpawnEnemy(FRAME_BUFFER_WIDTH + 50, 90, player.score);
         }
         else if (gameOver)
         {
-            RestartGame();
+            Restart();
         }
     }
     if (OnKeyPressed(KB_KEY_ESCAPE))
@@ -199,7 +191,11 @@ void Start()
 	srand((unsigned int) time(NULL));
 
     CreateBackground();
+
+    rndFrame = GetRandomNbr(50, 60);
 }
+
+#pragma region Update Functions
 
 void HandleJump()
 {
@@ -237,21 +233,75 @@ bool IsCollisionDetected(Player &player, Enemy &enemy)
 
 void UpdateTitleScreen()
 {
-    DrawText("press space", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 4));
-    DrawText("to start", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, ((int)(FRAME_BUFFER_HEIGHT / 4)) + 9);
-    DrawEmptyRect(55, ((int)(FRAME_BUFFER_HEIGHT / 4)) - 11, 90, 28, WHITE);
+    DrawFullRect (((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4, 90, 28, BLACK);
+    DrawEmptyRect(((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4, 90, 28, WHITE);
+    DrawTextWithColor("press space", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 4), WHITE);
+    DrawTextWithColor("to start", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, ((int)(FRAME_BUFFER_HEIGHT / 4)) + 9, WHITE);
+    
+    DrawFullRect (((int)(FRAME_BUFFER_WIDTH / 2)), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4, 90, 28, BLACK);
+    DrawEmptyRect(((int)(FRAME_BUFFER_WIDTH / 2)), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4, 90, 28, WHITE);
+    DrawTextWithColor("press escape", (int)(FRAME_BUFFER_WIDTH / 2), 90, WHITE); 
+    DrawTextWithColor("to exit", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, 99, WHITE); 
+}
 
-    DrawText("press escape", (int)(FRAME_BUFFER_WIDTH / 2), 90); 
-    DrawText("to exit", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, 99); 
-    DrawEmptyRect(55, 90 - 11, 90, 28, WHITE);
+void HandleEnemySpawn()
+{
+    if (frameCounter >= rndFrame)
+    {
+        if (GetRandomNbr(1, 5) == 5)
+        {
+            SpawnEnemy(birdSprite ,FRAME_BUFFER_WIDTH + GetRandomNbr(20, 50), 70, player.score);
+        }
+        else 
+        {
+            SpawnEnemy(pigSprite ,FRAME_BUFFER_WIDTH + GetRandomNbr(20, 50), 92, player.score);
+        }
+
+        rndFrame = GetRandomNbr(50, 60);
+
+        frameCounter = 0;
+    }
+}
+
+void UpdateScore()
+{
+    int frameToUpdateScore = (int)(60 / scoreSpeed) > 0 ? (int)(60 / scoreSpeed) : 1;
+
+    if (frameCounter % frameToUpdateScore == 0)
+    {
+        player.score ++;
+
+        if (player.score % 50 == 0)
+        {
+            gameSpeed += 0.2f;
+            adjustedGameSpeed = (int)gameSpeed;
+        }
+
+        if (player.score % 100 == 0)
+        {
+            scoreSpeed++;
+        }
+
+        if (player.score == 10 || player.score == 100 ||player.score == 1000)
+        {
+            scoreTextPosX += 4;
+        }
+    }
+}
+
+void DisplayGameOverBox()
+{
+    DrawFullRect((int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15, 90, 50, BLACK);
+    DrawEmptyRect((int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15, 90, 50, RED);
+    DrawTextWithColor("Game Over", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 3) + 5, RED);
+    DrawTextWithColor("press space", (int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 20, RED);
+    DrawTextWithColor("to restart", (int)(FRAME_BUFFER_WIDTH / 2),  ((int)(FRAME_BUFFER_HEIGHT / 3)) + 29, RED);
 }
 
 void UpdateGame()
 {
     adjustedGameSpeed = remainingPixelToParcour >= 1 ? (int)gameSpeed + remainingPixelToParcour-- : (int)gameSpeed;
     remainingPixelToParcour += gameSpeed - (int)gameSpeed;
-
-    //adjustedGameSpeed <= gameSpeed ? printf("%i \n", adjustedGameSpeed) : printf("--- %i \n", adjustedGameSpeed);
 
     for(int i = 0; i < enemyCount; i++)
     {
@@ -280,46 +330,9 @@ void UpdateGame()
     {
         HandleJump();
 
-        int tmp = GetRandomNbr(50, 60);
+        HandleEnemySpawn();
 
-        if (frameCounter >= tmp)
-        {
-            printf("%i \n", tmp);
-
-            if (GetRandomNbr(1, 5) == 5)
-            {
-                SpawnEnemy(FRAME_BUFFER_WIDTH + GetRandomNbr(20, 50), 70, player.score);
-            }
-            else 
-            {
-                SpawnEnemy(FRAME_BUFFER_WIDTH + GetRandomNbr(20, 50), 90, player.score);
-            }
-
-            frameCounter = 0;
-        }
-
-        int frameToUpdateScore = (int)(60 / scoreSpeed) > 0 ? (int)(60 / scoreSpeed) : 1;
-
-        if (frameCounter % frameToUpdateScore == 0)
-        {
-            player.score ++;
-
-            if (player.score % 50 == 0)
-            {
-                gameSpeed += 0.2f;
-                adjustedGameSpeed = (int)gameSpeed;
-            }
-
-            if (player.score % 100 == 0)
-            {
-                scoreSpeed++;
-            }
-
-            if (player.score == 10 || player.score == 100 ||player.score == 1000)
-            {
-                scoreTextPosX += 4;
-            }
-        }
+        UpdateScore();
 
         snprintf(scoreText, 15, "score : %i", player.score);
 
@@ -327,10 +340,7 @@ void UpdateGame()
     }
     else 
     {
-        DrawFullRect((int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15, 90, 50, BLACK);
-        DrawTextWithColor("Game Over", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 3), RED);
-        DrawTextWithColor("press space", (int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 20, RED);
-        DrawTextWithColor("to restart", (int)(FRAME_BUFFER_WIDTH / 2),  ((int)(FRAME_BUFFER_HEIGHT / 3)) + 29, RED);
+        DisplayGameOverBox();
     }
 }
 
@@ -370,6 +380,8 @@ void Update()
         
     } while(mfb_wait_sync(window));
 }
+
+#pragma endregion Update Functions
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 

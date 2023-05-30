@@ -41,7 +41,7 @@ void SpawnGroundTile(int xStart, int yStart)
 
     Tile tile
     {
-        tile.sprite = groundSprites[GetRandomNbr(0, 3)],
+        tile.sprite = groundSprites[GetRandomNbr(0, 2)],
         tile.xPos = xStart, tile.yPos = yStart
     };
 

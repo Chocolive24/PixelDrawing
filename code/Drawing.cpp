@@ -28,10 +28,12 @@ bitmap_t;
 #pragma region Colors
 
 #define RED  0xFFFF0000
+#define DARK_RED  0xFF660000
 #define BLUE 0xFF0000FF
 #define GREEN 0xFF00FF00
 #define BLACK 0xFF000000
 #define WHITE 0xFFFFFFFF
+#define LIGHT_GREY 0x004C99
 
 #pragma endregion Colors
 
@@ -88,8 +90,6 @@ void DrawPixel(int x, int y, uint32_t color)
     // frameBuffer[pixelIndex] = MFB_RGB(finalRed, finalGreen, finalBlue);
     
     frameBuffer[GetPixelIndex(x, y)] = color;
-
-    //buffer[GetPixelIndex(x, y)] = color;
 };
 
 #pragma endregion Pixels Handle Functions
@@ -102,7 +102,7 @@ void DrawHorizontalLine(int xStart, int xEnd, int y, uint32_t color)
     {
         DrawPixel(i, y, color);
     }
-};
+}
 
 void DrawVerticalLine(int x, int yStart, int yEnd, uint32_t color)
 {
@@ -110,7 +110,7 @@ void DrawVerticalLine(int x, int yStart, int yEnd, uint32_t color)
     {
         DrawPixel(x, i, color);
     }
-};
+}
 
 void DrawFullRect(int xStart, int yStart, int width, int height, uint32_t color)
 {
@@ -128,11 +128,12 @@ void DrawFullRect(int xStart, int yStart, int width, int height, uint32_t color)
             DrawPixel(x, y, color);
         }
     }
-};
+}
 
 void DrawEmptyRect(int xStart, int yStart, int width, int height, uint32_t color)
 {
-    
+    xStart = (int)(xStart - width / 2);
+    yStart = (int)(yStart - height / 2);
 
     int xEnd = width + xStart;
     int yEnd = height + yStart;
@@ -140,8 +141,8 @@ void DrawEmptyRect(int xStart, int yStart, int width, int height, uint32_t color
     DrawHorizontalLine(xStart, xEnd, yStart, color);
     DrawVerticalLine(xStart, yStart, yEnd, color);
     DrawVerticalLine(xEnd, yStart, yEnd, color);
-    DrawHorizontalLine(xStart, xEnd + 1, yEnd, WHITE);
-};
+    DrawHorizontalLine(xStart, xEnd + 1, yEnd, color);
+}
 
 #pragma endregion Shape Drawing Functions
 
