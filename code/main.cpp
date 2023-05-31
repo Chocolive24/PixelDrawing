@@ -3,6 +3,7 @@
 #include <malloc.h>
 #include <random>
 
+#include "AudioManager.cpp"
 #include "Drawing.cpp"
 #include "Background.cpp"
 #include "Enemy.cpp"
@@ -78,6 +79,8 @@ void Jump(Player& player)
     if (!player.isJumping)
     {
         player.isJumping = true;
+
+        PlaySFX(sfx_jump);
     }
 }
 
@@ -189,6 +192,10 @@ void Start()
 
     // Providing a seed value
 	srand((unsigned int) time(NULL));
+
+    mfb_set_target_fps(60);
+
+    SetupSound();
 
     CreateBackground();
 
