@@ -3,11 +3,17 @@
 #include <malloc.h>
 #include <random>
 
+#define ARR_LEN(arr) ((int) (sizeof(arr) / sizeof(*arr)))
+#define MAX(a, b) ((a > b) ? a : b)
+#define MIN(a, b) ((a < b) ? a : b)
+
 #include "AudioManager.cpp"
 #include "Drawing.cpp"
 #include "Background.cpp"
 #include "Enemy.cpp"
 #include "Utility.cpp"
+
+
 
 // Structs
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -80,7 +86,9 @@ void Jump(Player& player)
     {
         player.isJumping = true;
 
-        PlaySFX(sfx_jump);
+        jumpSound = PlaySound(1.0f, c_majorRange[10], 2.0 / 44100, -0.01, true);
+        // d = PlaySound(1.f, c_majorRange[4]);
+        // g = PlaySound(1.f, c_majorRange[7]);
     }
 }
 
@@ -294,6 +302,24 @@ void UpdateScore()
             scoreTextPosX += 4;
         }
     }
+
+    int frameToSwitchSound = 10 - (frameToUpdateScore);
+
+    printf("%i \n", frameToSwitchSound);
+
+    if (soundFrameCounter % 10 - (frameToUpdateScore / 2) == 0 && !player.isJumping)
+    {
+        stepSoundCount++;
+
+        if (stepSoundCount % 2 == 0)
+        {
+            PlaySound(2.f, c_majorRange[4] + GetRandomNbr(10, 20), 0.001, -0.01, true);
+        }
+        else 
+        {
+            PlaySound(2.f, c_majorRange[0] + GetRandomNbr(10, 20),  0.001, 0.01, true);
+        }
+    }
 }
 
 void DisplayGameOverBox()
@@ -314,9 +340,12 @@ void UpdateGame()
     {
         Enemy* enemy = &enemies[i];
 
-        if (IsCollisionDetected(player, *enemy))
+        if (IsCollisionDetected(player, *enemy) && !gameOver)
         {
             gameOver = true;
+            c = PlaySound(1.f, c_majorRange[0], 0.00001, 0.01, true);
+            d = PlaySound(1.f, c_majorRange[4], 0.00001, 0.01, true);
+            g = PlaySound(1.f, c_majorRange[7], 0.00001, 0.01, true);
         }
 
         enemy->xPos -= gameOver ? 0 : adjustedGameSpeed;
@@ -342,8 +371,6 @@ void UpdateGame()
         UpdateScore();
 
         snprintf(scoreText, 15, "score : %i", player.score);
-
-        frameCounter++;
     }
     else 
     {
@@ -385,6 +412,8 @@ void Update()
             UpdateGame();
         }
         
+        frameCounter++;
+        soundFrameCounter++;
     } while(mfb_wait_sync(window));
 }
 
@@ -398,6 +427,9 @@ void Update()
 int main()
 {
     Start();
+
+    SoundClip clip = loadSoundClip("assets/RaceTheme.wav");
+    PlaySoundClip(clip, 0.5f, 440, 0, 0, true);
 
     Update();
 

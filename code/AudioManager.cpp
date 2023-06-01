@@ -6,22 +6,57 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include <stdio.h>
+
 // Structs 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-typedef struct SFX
+typedef struct SoundClip
 {
-    float baseAmplitude, baseFrequency;
-    float amplitude, frequency;
+    float* samples;
+    int sampleCount;
+    uint32_t samplePerSec;
 }
-SFX;
- 
+SoundClip;
+
+// stocker le temps depuis le début du clip
+
+
+
+typedef struct Sound
+{
+    double time;
+    float amplitude, frequency;
+    float amplitudeFactor, frequencyFactor;
+    double timeFromStart;
+    bool looping;
+    SoundClip clip;
+}
+Sound;
+
+// nice fmt block struct from cute_sound.h
+#pragma pack(push, 1)
+typedef struct wav_fmt_block_t
+{
+    uint16_t wFormatTag;
+    uint16_t nChannels;
+    uint32_t nSamplesPerSec;
+    uint32_t nAvgBytesPerSec;
+    uint16_t nBlockAlign;
+    uint16_t wBitsPerSample;
+    // uint16_t cbSize;
+    // uint16_t wValidBitsPerSample;
+    // uint32_t dwChannelMask;
+    // uint8_t  SubFormat[18];
+} wav_fmt_block_t;
+#pragma pack(pop) 
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Variables 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-float C_major_range[12]
+float c_majorRange[12]
 {
     261.63f, // C or Bb
     277.18f, // C# or Db
@@ -37,60 +72,230 @@ float C_major_range[12]
     493.88f  // B or Cb
 };
 
-double timeSound;
-double timeCounter;
-
 int C_rangeIdx = 0;
 
-SFX sfx_jump 
-{ 
-    sfx_jump.baseAmplitude = 1, sfx_jump.baseFrequency = C_major_range[11],
-    sfx_jump.amplitude = 1, sfx_jump.frequency = sfx_jump.baseFrequency
-};
+int stepSoundCount;
+int soundFrameCounter;
+
+Sound* stepSound;
+Sound* jumpSound;
+
+Sound* c;
+Sound* d;
+Sound* g;
+
+Sound* gameoverSound;
+
+Sound playingSounds[10];
+int playingSoundsCount = 0;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Functions 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+uint8_t* loadEntireFile(const char* filePath)
+{
+    FILE* file = fopen(filePath, "rb");
+    fseek(file, 0, SEEK_END);
+    size_t size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    uint8_t* memory = (uint8_t*)malloc(size);
+    fread(memory, size, 1, file);
+    fclose(file);
+
+    return memory;
+}
+
+SoundClip loadSoundClip(const char* filePath)
+{
+    uint8_t* file = loadEntireFile(filePath);
+
+    // Fichier wav on wikipedia for all info.
+    // Check if the RIFF constant is in the file -> constant which is always in .wav files.
+    assert(file[0] == 'R'); 
+    assert(file[1] == 'I'); 
+    assert(file[2] == 'F'); 
+    assert(file[3] == 'F'); 
+
+    // goes 8 bytes faraway
+    file += 4; // RIFF 
+    file += 4; // size
+
+    assert(file[0] == 'W');
+    assert(file[1] == 'A');
+    assert(file[2] == 'V');
+    assert(file[3] == 'E');
+
+    file += 4; // WAVE
+
+    // TODO: Look for the fmt block, which is not always following the first block
+    assert(file[0] == 'f');
+    assert(file[1] == 'm');
+    assert(file[2] == 't');
+    assert(file[3] == 0x20);
+
+    file += 4; // fmt -> Information Block
+
+    // BlockSize
+    int32_t* ptr = (int32_t*)file;
+    int32_t val = *ptr;
+    printf("size: %i\n", val);
+
+    file += 4; // size
+
+    // AudioFormat (if 1 -> int)
+    wav_fmt_block_t* formatBlock = (wav_fmt_block_t*)file;
+    printf("audio format:   %i\n", formatBlock->wFormatTag);
+    printf("nbr channels:   %i\n", formatBlock->nChannels);
+    printf("sample per sec: %i\n", formatBlock->nSamplesPerSec);
+    printf("bit per sample: %i\n", formatBlock->wBitsPerSample);
+
+    file = (uint8_t*) ptr + 4 + 16;
+
+    // for (int delta = 0; delta < 1000; delta++)
+    // {
+    //     file += 1;
+
+    //     bool ok = file[0] == 'd' && file[1] == 'a' && file[2] == 't' && file[3] == 'a';
+        
+    //     if (ok)
+    //     {
+    //         printf("delta worked %i\n", delta);
+    //         break;
+    //     }
+    // }
+    
+    file += 4; // data
+    uint64_t dataSize = *(uint32_t*)file;
+    file += 4; // data size
+
+    int samplesCount = dataSize / sizeof(uint16_t) / 2;
+
+    SoundClip clip = 
+    {
+        clip.samples = (float*)malloc(sizeof(float) * samplesCount),
+        clip.sampleCount = samplesCount,
+        clip.samplePerSec = formatBlock->nSamplesPerSec
+    };
+
+    printf("samples: %i clipSamples; %i\n", samplesCount, clip.sampleCount);
+
+    for (int i = 0; i < samplesCount; i++)
+    {
+        int16_t val = ((int)file[0] | file[1] << 8);
+        file += 4; // 4 because we want to skip one of the channel
+
+        clip.samples[i] = (float)val / (INT16_MAX); // 2^16 / 2 -> pour faire aller de -1 à 1
+    }
+
+    // // génére array de float avec des valeurs qui oscille entre 1 et -1 (sin)
+    // float clipTime = 0;
+    // for (int i = 0; i < clip.frameCount; i++)
+    // {
+    //     clip.samples[i] = sinf(clipTime * 2 * M_PI);
+    //     clipTime += 1.0 / 44100 * 440;
+    // }
+
+    return clip;
+}
+
+Sound* AddSound(float amplitude, float frequency, float amplitudeFactor, float frequencyFactor, bool looping)
+{
+    if (playingSoundsCount >= ARR_LEN(playingSounds))
+    {
+        printf("Too many sounds playing");
+        return nullptr;
+    }
+
+    Sound sound
+    { 
+        sound.time = 0.0, 
+        sound.amplitude = amplitude, sound.frequency = frequency,
+        sound.amplitudeFactor = amplitudeFactor, sound.frequencyFactor = frequencyFactor,
+        sound.looping = looping
+    };
+
+    playingSounds[playingSoundsCount++] = sound;
+
+    return &playingSounds[playingSoundsCount - 1];
+}
+
+Sound* PlaySoundClip(SoundClip soundClip, float amplitude, float frequency, float amplitudeFactor, float frequencyFactor, bool looping)
+{
+    Sound* sound = AddSound(amplitude, frequency, amplitudeFactor, frequencyFactor, looping);
+    sound->timeFromStart = 0.0;
+    sound->clip = soundClip;
+
+    return sound;
+}
+
+Sound* PlaySound(float amplitude, float frequency, float amplitudeFactor, float frequencyFactor, bool looping)
+{
+    return AddSound(amplitude, frequency, amplitudeFactor, frequencyFactor, looping);
+}
+
 void AudioCallback(float* buffer, int numFrames, int numChannels)
 {
     for (int frame = 0; frame < numFrames; frame++)
     {
-        // sfx_jump.amplitude -= 0.00001f;
-        // sfx_jump.frequency -= 0.01f;
+        buffer[frame] = 0;
 
-        // if (sfx_jump.amplitude < 0)
-        // {
-        //     sfx_jump.amplitude = 0;
-        // }
-        // if (sfx_jump.frequency  < 0)
-        // {
-        //     sfx_jump.frequency  = 0;
-        // }
-
-        // 2 * PI = un tour de cercle, donc une oscillation de sin
-        buffer[frame] = sinf(timeSound * 2 * M_PI) * 0.2f * sfx_jump.amplitude; // * 0.n -> baisser le son.
-
-        timeCounter += 1.0 / 44100;
-
-        if (timeCounter >= 1)
+        for (int i = 0; i < playingSoundsCount; i++)
         {
-            timeCounter = 0;
-            if (C_rangeIdx < 11)
+            Sound* sound = &playingSounds[i];
+
+            sound->amplitude -= sound->amplitudeFactor;
+            sound->amplitude = MAX(0, sound->amplitude);
+
+            sound->frequency -= sound->frequencyFactor;
+            sound->frequency = MAX(0, sound->frequency);
+
+            bool soundFinished = false;
+
+            if (sound->amplitude <= 0)
             {
-                C_rangeIdx++;
+                soundFinished = true;
             }
-            else 
+
+            if (sound->clip.samples)
             {
-                C_rangeIdx = 0;
+                buffer[frame] += sound->clip.samples[(int)sound->timeFromStart] * 0.2f * sound->amplitude;
+
+                //printf("float %f int %i\n", sound->timeFromStart, (int)sound->timeFromStart);
+
+                sound->timeFromStart += 1.0 / 44100 * sound->clip.samplePerSec;
+
+                if (sound->timeFromStart >= sound->clip.sampleCount)
+                {
+                    soundFinished = true;
+                    printf("sound finished");
+                }
+            }
+            else
+            {
+                // 2 * PI = un tour de cercle, donc une oscillation de sin
+                buffer[frame] += sinf(sound->time * 2 * M_PI) * 0.2f * sound->amplitude; // * 0.n -> baisser le son.
+
+                // 44100 = samples per second
+                sound->time += 1.0 / 44100 * sound->frequency; // time between 2 sample
+            }
+
+            if (soundFinished)
+            {
+                if (sound->looping)
+                {
+                    sound->time = 0;
+                    sound->timeFromStart = 0.0;
+                }
+
+                playingSounds[i] = playingSounds[playingSoundsCount - 1];
+                playingSoundsCount--;
+                i--;
             }
         }
-
-        timeSound += 1.0 / 44100 * C_major_range[C_rangeIdx]; // time between 2 sample
     }
-
-    sinf(timeSound * M_PI);
 }
 
 void SetupSound()
@@ -102,10 +307,5 @@ void SetupSound()
     saudio_setup(audioDesc);
 }
 
-void PlaySFX(SFX& sfx)
-{
-    sfx.amplitude = sfx.baseAmplitude;
-    sfx.frequency = sfx.baseFrequency;
-}
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
