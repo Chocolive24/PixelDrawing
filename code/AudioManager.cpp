@@ -1,12 +1,12 @@
 #pragma once
+
 #define SOKOL_IMPL
 #include <sokol_log.h>
+
 #include <sokol_audio.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
-
-#include <stdio.h>
 
 // Structs 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -19,16 +19,11 @@ typedef struct SoundClip
 }
 SoundClip;
 
-// stocker le temps depuis le début du clip
-
-
-
 typedef struct Sound
 {
     double time;
     float amplitude, frequency;
     float amplitudeFactor, frequencyFactor;
-    double timeFromStart;
     bool looping;
     SoundClip clip;
 }
@@ -56,7 +51,7 @@ typedef struct wav_fmt_block_t
 // Variables 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-float c_majorRange[12]
+float cScale[12]
 {
     261.63f, // C or Bb
     277.18f, // C# or Db
@@ -72,7 +67,7 @@ float c_majorRange[12]
     493.88f  // B or Cb
 };
 
-int C_rangeIdx = 0;
+int cScaleIdx = 0;
 
 int stepSoundCount;
 int soundFrameCounter;
@@ -80,6 +75,7 @@ int soundFrameCounter;
 Sound* stepSound;
 Sound* jumpSound;
 
+// C major chord
 Sound* c;
 Sound* d;
 Sound* g;
@@ -209,12 +205,12 @@ Sound* AddSound(float amplitude, float frequency, float amplitudeFactor, float f
         return nullptr;
     }
 
-    Sound sound
-    { 
-        sound.time = 0.0, 
-        sound.amplitude = amplitude, sound.frequency = frequency,
-        sound.amplitudeFactor = amplitudeFactor, sound.frequencyFactor = frequencyFactor,
-        sound.looping = looping
+    Sound sound = 
+    {
+        0.0, 
+        amplitude, frequency,
+        amplitudeFactor, frequencyFactor,
+        looping,
     };
 
     playingSounds[playingSoundsCount++] = sound;
@@ -225,7 +221,6 @@ Sound* AddSound(float amplitude, float frequency, float amplitudeFactor, float f
 Sound* PlaySoundClip(SoundClip soundClip, float amplitude, float frequency, float amplitudeFactor, float frequencyFactor, bool looping)
 {
     Sound* sound = AddSound(amplitude, frequency, amplitudeFactor, frequencyFactor, looping);
-    sound->timeFromStart = 0.0;
     sound->clip = soundClip;
 
     return sound;
@@ -261,13 +256,11 @@ void AudioCallback(float* buffer, int numFrames, int numChannels)
 
             if (sound->clip.samples)
             {
-                buffer[frame] += sound->clip.samples[(int)sound->timeFromStart] * 0.2f * sound->amplitude;
+                buffer[frame] += sound->clip.samples[(int)sound->time] * 0.2f * sound->amplitude;
 
-                //printf("float %f int %i\n", sound->timeFromStart, (int)sound->timeFromStart);
+                sound->time += 1.0 / 44100 * sound->clip.samplePerSec;
 
-                sound->timeFromStart += 1.0 / 44100 * sound->clip.samplePerSec;
-
-                if (sound->timeFromStart >= sound->clip.sampleCount)
+                if (sound->time >= sound->clip.sampleCount)
                 {
                     soundFinished = true;
                     printf("sound finished");
@@ -287,12 +280,13 @@ void AudioCallback(float* buffer, int numFrames, int numChannels)
                 if (sound->looping)
                 {
                     sound->time = 0;
-                    sound->timeFromStart = 0.0;
                 }
-
-                playingSounds[i] = playingSounds[playingSoundsCount - 1];
-                playingSoundsCount--;
-                i--;
+                else 
+                {
+                    playingSounds[i] = playingSounds[playingSoundsCount - 1];
+                    playingSoundsCount--;
+                    i--;
+                }
             }
         }
     }

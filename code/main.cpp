@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <iostream>
 #include <string.h>
 #include <malloc.h>
 #include <random>
@@ -12,8 +13,6 @@
 #include "Background.cpp"
 #include "Enemy.cpp"
 #include "Utility.cpp"
-
-
 
 // Structs
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -71,12 +70,20 @@ Player player
 
 int startScoreSpeed = 10;
 int scoreSpeed = startScoreSpeed;
-int frameCounter, rndFrame;
+int frameCounter, frameToUpdateScore;
+
+mfb_timer* timer = mfb_timer_create();
+double enemySpawnDeltaTime;
+double rndSpawnTime;
+
+
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Functions 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 #pragma region Player Functions
 
@@ -86,9 +93,7 @@ void Jump(Player& player)
     {
         player.isJumping = true;
 
-        jumpSound = PlaySound(1.0f, c_majorRange[10], 2.0 / 44100, -0.01, true);
-        // d = PlaySound(1.f, c_majorRange[4]);
-        // g = PlaySound(1.f, c_majorRange[7]);
+        jumpSound = PlaySound(1.0f, cScale[10], 2.0 / 44100, -0.01, false);
     }
 }
 
@@ -207,7 +212,10 @@ void Start()
 
     CreateBackground();
 
-    rndFrame = GetRandomNbr(50, 60);
+    rndSpawnTime = GetRandomFloat(0.85f, 1.f);
+
+    SoundClip clip = loadSoundClip("assets/RaceTheme.wav");
+    PlaySoundClip(clip, 0.5f, 440, 0, 0, true);
 }
 
 #pragma region Update Functions
@@ -261,26 +269,43 @@ void UpdateTitleScreen()
 
 void HandleEnemySpawn()
 {
-    if (frameCounter >= rndFrame)
+    if (enemySpawnDeltaTime >= rndSpawnTime)
     {
-        if (GetRandomNbr(1, 5) == 5)
+        if (GetRandomInt(1, 5) == 5)
         {
-            SpawnEnemy(birdSprite ,FRAME_BUFFER_WIDTH + GetRandomNbr(20, 50), 70, player.score);
+            SpawnEnemy(birdSprite ,FRAME_BUFFER_WIDTH + GetRandomInt(20, 50), 70, player.score);
         }
         else 
         {
-            SpawnEnemy(pigSprite ,FRAME_BUFFER_WIDTH + GetRandomNbr(20, 50), 92, player.score);
+            SpawnEnemy(pigSprite ,FRAME_BUFFER_WIDTH + GetRandomInt(20, 50), 92, player.score);
         }
 
-        rndFrame = GetRandomNbr(50, 60);
+        rndSpawnTime = GetRandomFloat(0.85f, 1.f);
 
-        frameCounter = 0;
+        enemySpawnDeltaTime = 0.0;
+    }
+}
+
+void HandleFootstepsSound()
+{
+    if (soundFrameCounter % 10 - (frameToUpdateScore / 2) == 0 && !player.isJumping)
+    {
+        stepSoundCount++;
+
+        if (stepSoundCount % 2 == 0)
+        {
+            PlaySound(2.f, cScale[4] + GetRandomInt(10, 20), 0.001, -0.01, false);
+        }
+        else 
+        {
+            PlaySound(2.f, cScale[0] + GetRandomInt(10, 20),  0.001, 0.01, false);
+        }
     }
 }
 
 void UpdateScore()
 {
-    int frameToUpdateScore = (int)(60 / scoreSpeed) > 0 ? (int)(60 / scoreSpeed) : 1;
+    frameToUpdateScore = (int)(60 / scoreSpeed) > 0 ? (int)(60 / scoreSpeed) : 1;
 
     if (frameCounter % frameToUpdateScore == 0)
     {
@@ -303,23 +328,7 @@ void UpdateScore()
         }
     }
 
-    int frameToSwitchSound = 10 - (frameToUpdateScore);
-
-    printf("%i \n", frameToSwitchSound);
-
-    if (soundFrameCounter % 10 - (frameToUpdateScore / 2) == 0 && !player.isJumping)
-    {
-        stepSoundCount++;
-
-        if (stepSoundCount % 2 == 0)
-        {
-            PlaySound(2.f, c_majorRange[4] + GetRandomNbr(10, 20), 0.001, -0.01, true);
-        }
-        else 
-        {
-            PlaySound(2.f, c_majorRange[0] + GetRandomNbr(10, 20),  0.001, 0.01, true);
-        }
-    }
+    HandleFootstepsSound();
 }
 
 void DisplayGameOverBox()
@@ -343,9 +352,9 @@ void UpdateGame()
         if (IsCollisionDetected(player, *enemy) && !gameOver)
         {
             gameOver = true;
-            c = PlaySound(1.f, c_majorRange[0], 0.00001, 0.01, true);
-            d = PlaySound(1.f, c_majorRange[4], 0.00001, 0.01, true);
-            g = PlaySound(1.f, c_majorRange[7], 0.00001, 0.01, true);
+            c = PlaySound(1.f, cScale[0], 0.00001, 0.01, false);
+            d = PlaySound(1.f, cScale[4], 0.00001, 0.01, false);
+            g = PlaySound(1.f, cScale[7], 0.00001, 0.01, false);
         }
 
         enemy->xPos -= gameOver ? 0 : adjustedGameSpeed;
@@ -410,10 +419,18 @@ void Update()
         else
         {
             UpdateGame();
+
+            frameCounter++;
+            soundFrameCounter++;
+            enemySpawnDeltaTime += mfb_timer_delta(timer);
+
+            printf("%f\n", rndSpawnTime);
         }
         
-        frameCounter++;
-        soundFrameCounter++;
+        
+        
+    
+
     } while(mfb_wait_sync(window));
 }
 
@@ -427,9 +444,6 @@ void Update()
 int main()
 {
     Start();
-
-    SoundClip clip = loadSoundClip("assets/RaceTheme.wav");
-    PlaySoundClip(clip, 0.5f, 440, 0, 0, true);
 
     Update();
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdio.h>
-#include <iostream>
 #include <MiniFB.h>
 
 #define STB_IMAGE_IMPLEMENTATION

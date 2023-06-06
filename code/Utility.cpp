@@ -1,5 +1,6 @@
 #pragma once 
 
+#include <iostream>
 #include <random>
 
 #define WINDOW_FAC 4
@@ -14,15 +15,39 @@
 
 #define COLLISION_OFFSET 2 // Amount to subtract from collision detection pixels
 
-// Functions ----------------------------------------------------------------------------------------------------------------------------------------------------
+// Variables 
+// // ----------------------------------------------------------------------------------------------------------------------------------------------------
 
-/// @brief Generate a rnd nbr.
-/// @param min The starting point for the range of random numbers
-/// @param maxMinusMin The number of values between first and the last possible random number including the limits.
-/// @return 
-int GetRandomNbr(int min, int maxMinusMin)
+// std::random_device os_seed;
+// uint_least32_t seed = os_seed();
+
+// std::mt19937 generator(seed);
+
+std::random_device os_seed;
+uint_least32_t seed = os_seed();
+std::mt19937 generator(seed);
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+// Functions 
+// ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+int GetRandomInt(int min, int max)
 {
-    int nbr = min + (rand() % maxMinusMin);
-    //printf("%i \n", nbr);
-    return nbr;
+    std::uniform_int_distribution<int> intDistribution(min, max);
+    int randomInt = intDistribution(generator);
+    std::cout << "Random Integer: " << randomInt << std::endl;
+
+    return randomInt;
 }
+
+float GetRandomFloat(float min, float max)
+{
+    std::uniform_real_distribution<float> floatDistribution(min, max);
+    float randomFloat = floatDistribution(generator);
+    std::cout << "Random Float: " << randomFloat << std::endl;
+
+    return randomFloat;
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------
