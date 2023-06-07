@@ -108,7 +108,7 @@ void DrawBackground(int gameSpeed, int adjustedGameSpeed, bool gameOver, bool ga
     {
         Tile* moutainTile = &mountainTiles[i];
 
-        moutainTile->xPos -= gameOver || !gameStarted ? 0 : (int)(gameSpeed / 2);
+        moutainTile->xPos -= gameOver || !gameStarted ? 0 : (int)gameSpeed / 2;
 
         DrawBitmap(((unsigned char*)moutainTile->sprite.pixels), moutainTile->xPos, moutainTile->yPos, 
                     moutainTile->sprite.pixel_size_x, moutainTile->sprite.pixel_size_y);

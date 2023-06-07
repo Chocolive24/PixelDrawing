@@ -28,7 +28,7 @@ int spawnTimeMultiplicator = 3;
 
 void SpawnEnemy(bitmap_t sprite, int xStart, int yStart, int playerScore)
 {
-    if (enemyCount == 10)
+    if (enemyCount >= 10)
     {
         return;
     }

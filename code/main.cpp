@@ -2,16 +2,13 @@
 #include <iostream>
 #include <string.h>
 #include <malloc.h>
-#include <random>
-
-#define ARR_LEN(arr) ((int) (sizeof(arr) / sizeof(*arr)))
-#define MAX(a, b) ((a > b) ? a : b)
-#define MIN(a, b) ((a < b) ? a : b)
 
 #include "AudioManager.cpp"
-#include "Drawing.cpp"
 #include "Background.cpp"
+#include "Drawing.cpp"
 #include "Enemy.cpp"
+#include "Input.cpp"
+#include "LevelEditor.cpp"
 #include "Utility.cpp"
 
 // Structs
@@ -41,9 +38,6 @@ Player;
 
 struct mfb_window *window;
 
-bool keyStates[KB_KEY_LAST + 1];
-bool previousKeyStates[KB_KEY_LAST + 1];
-
 bool gameStarted = false;
 bool gameOver = false;
 
@@ -70,20 +64,16 @@ Player player
 
 int startScoreSpeed = 10;
 int scoreSpeed = startScoreSpeed;
-int frameCounter, frameToUpdateScore;
+int frameCounter, rndFrame, frameToUpdateScore;
 
 mfb_timer* timer = mfb_timer_create();
-double enemySpawnDeltaTime;
-double rndSpawnTime;
-
-
+double deltaTime, enemySpawnDeltaTime, scoreDeltaTime;
+double rndSpawnTime, timeToUpdateScore;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Functions 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
 
 #pragma region Player Functions
 
@@ -122,28 +112,6 @@ void Restart()
     scoreTextPosX = 36;
 }
 
-#pragma region Input Functions
-
-void OnKeyboardEvent(struct mfb_window *window, mfb_key key, mfb_key_mod mod, bool isPressed)
-{
-    keyStates[key] = isPressed;
-}
-
-bool OnKeyBeingPressed(mfb_key key)
-{
-    return keyStates[key];
-}
-
-bool OnKeyPressed(mfb_key key)
-{
-    return !previousKeyStates[key] && keyStates[key];
-}
-
-bool OnKeyReleased(mfb_key key)
-{
-    return previousKeyStates[key] && !keyStates[key];
-}
-
 void HandleInputs()
 {
     // On Key Pressed Events.
@@ -164,9 +132,25 @@ void HandleInputs()
             Restart();
         }
     }
+    
     if (OnKeyPressed(KB_KEY_ESCAPE))
     {
         exit(1);
+    }
+
+    if (OnKeyPressed(KB_KEY_S))
+    {
+        SaveLevel();
+    }
+
+    if (OnKeyPressed(KB_KEY_L))
+    {
+        LoadLevel();
+    }
+
+    if (OnMousePressed(MOUSE_LEFT) && OnKeyBeingPressed(KB_KEY_LEFT_CONTROL))
+    {
+        SpawnEntity(mouseX, mouseY);
     }
 
     // ------------------------------------------------------
@@ -186,8 +170,6 @@ void HandleInputs()
 
 void Start()
 {
-    printf("Hello World \n");
-
     window = mfb_open_ex("Game", WINDOW_WIDTH, WINDOW_HEIGHT, WF_RESIZABLE);
 
     if (!window)
@@ -201,18 +183,20 @@ void Start()
     windowBuffer = (uint32_t*) malloc(WINDOW_MEMORY);
     frameBuffer = (uint32_t*) malloc(FRAME_BUFFER_WIDTH * FRAME_BUFFER_HEIGHT * 4);
 
-    mfb_set_keyboard_callback(window, OnKeyboardEvent);
+    mfb_get_monitor_scale(window, &monitorScaleX, &monitorScaleY);
+
+    InitializeInputCallbacks(window);
 
     // Providing a seed value
 	srand((unsigned int) time(NULL));
 
-    mfb_set_target_fps(60);
+    windows_enable_colors_in_command_prompt();
 
     SetupSound();
 
     CreateBackground();
 
-    rndSpawnTime = GetRandomFloat(0.85f, 1.f);
+    rndFrame = GetRandomInt(50, 60);
 
     SoundClip clip = loadSoundClip("assets/RaceTheme.wav");
     PlaySoundClip(clip, 0.5f, 440, 0, 0, true);
@@ -269,7 +253,7 @@ void UpdateTitleScreen()
 
 void HandleEnemySpawn()
 {
-    if (enemySpawnDeltaTime >= rndSpawnTime)
+    if (frameCounter % rndFrame == 0)
     {
         if (GetRandomInt(1, 5) == 5)
         {
@@ -280,15 +264,15 @@ void HandleEnemySpawn()
             SpawnEnemy(pigSprite ,FRAME_BUFFER_WIDTH + GetRandomInt(20, 50), 92, player.score);
         }
 
-        rndSpawnTime = GetRandomFloat(0.85f, 1.f);
+        rndFrame = GetRandomInt(50, 60);
 
-        enemySpawnDeltaTime = 0.0;
+        frameCounter = 0;
     }
 }
 
 void HandleFootstepsSound()
 {
-    if (soundFrameCounter % 10 - (frameToUpdateScore / 2) == 0 && !player.isJumping)
+    if (soundFrameCounter % 10 - (timeToUpdateScore / 2) == 0 && !player.isJumping)
     {
         stepSoundCount++;
 
@@ -309,7 +293,8 @@ void UpdateScore()
 
     if (frameCounter % frameToUpdateScore == 0)
     {
-        player.score ++;
+        scoreDeltaTime = 0.0;
+        player.score++;
 
         if (player.score % 50 == 0)
         {
@@ -327,14 +312,12 @@ void UpdateScore()
             scoreTextPosX += 4;
         }
     }
-
-    HandleFootstepsSound();
 }
 
 void DisplayGameOverBox()
 {
-    DrawFullRect((int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15, 90, 50, BLACK);
-    DrawEmptyRect((int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15, 90, 50, RED);
+    DrawFullRect((int)(FRAME_BUFFER_WIDTH / 2)  - 45, ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15 - 25, 90, 50, BLACK);
+    DrawEmptyRect((int)(FRAME_BUFFER_WIDTH / 2) - 45, ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15 - 25, 90, 50, RED);
     DrawTextWithColor("Game Over", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 3) + 5, RED);
     DrawTextWithColor("press space", (int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 20, RED);
     DrawTextWithColor("to restart", (int)(FRAME_BUFFER_WIDTH / 2),  ((int)(FRAME_BUFFER_HEIGHT / 3)) + 29, RED);
@@ -379,6 +362,8 @@ void UpdateGame()
 
         UpdateScore();
 
+        HandleFootstepsSound();
+
         snprintf(scoreText, 15, "score : %i", player.score);
     }
     else 
@@ -389,9 +374,32 @@ void UpdateGame()
 
 void Update()
 {
+    double lastRenderedFrameTime = -1000;
+    double nowTime;
+    double targetDeltaTime =  1.f/60.f;
+
     do 
     {
+        #ifdef __EMSCRIPTEN__
+        nowTime = mfb_timer_now(timer);
+        deltaTime = nowTime - lastRenderedFrameTime;
+        targetDeltaTime = 1.f/60.f;
+        if (deltaTime < targetDeltaTime) {
+            // si on a pas depassé notre target delta time, on rend la main au browser puis on revient en haut de la boucle
+            mfb_wait_sync(window);
+            continue;
+        }
+        lastRenderedFrameTime = nowTime;
+        #else
+        mfb_set_target_fps(60);
+        #endif
+
+        HandleInputs();
+
+        UpdateLevelEditor();
+
         memcpy(previousKeyStates, keyStates, sizeof(keyStates));
+        memcpy(previousMouseButtonStates, mouseButtonStates, sizeof(mouseButtonStates));
 
         resize_bitmap(windowBuffer, WINDOW_WIDTH, WINDOW_HEIGHT, frameBuffer, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
@@ -407,7 +415,7 @@ void Update()
         memset(windowBuffer, 0, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
         memset(frameBuffer, 0, FRAME_BUFFER_WIDTH * FRAME_BUFFER_HEIGHT * sizeof(uint32_t));
 
-        HandleInputs();
+        
 
         DrawBackground(gameSpeed, adjustedGameSpeed, gameOver, gameStarted);
         DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y);
@@ -422,14 +430,7 @@ void Update()
 
             frameCounter++;
             soundFrameCounter++;
-            enemySpawnDeltaTime += mfb_timer_delta(timer);
-
-            printf("%f\n", rndSpawnTime);
         }
-        
-        
-        
-    
 
     } while(mfb_wait_sync(window));
 }

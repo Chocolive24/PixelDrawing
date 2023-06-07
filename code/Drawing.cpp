@@ -112,8 +112,8 @@ void DrawVerticalLine(int x, int yStart, int yEnd, uint32_t color)
 
 void DrawFullRect(int xStart, int yStart, int width, int height, uint32_t color)
 {
-    xStart = (int)(xStart - width / 2);
-    yStart = (int)(yStart - height / 2);
+    // xStart = (int)(xStart - width / 2);
+    // yStart = (int)(yStart - height / 2);
 
     int xEnd = width + xStart;
     int yEnd = height + yStart;
@@ -130,11 +130,11 @@ void DrawFullRect(int xStart, int yStart, int width, int height, uint32_t color)
 
 void DrawEmptyRect(int xStart, int yStart, int width, int height, uint32_t color)
 {
-    xStart = (int)(xStart - width / 2);
-    yStart = (int)(yStart - height / 2);
+    // xStart = (int)(xStart - width / 2);
+    // yStart = (int)(yStart - height / 2);
 
-    int xEnd = width + xStart;
-    int yEnd = height + yStart;
+    int xEnd = width + xStart - 1;
+    int yEnd = height + yStart - 1;
 
     DrawHorizontalLine(xStart, xEnd, yStart, color);
     DrawVerticalLine(xStart, yStart, yEnd, color);
@@ -181,6 +181,8 @@ void DrawBitmap(unsigned char* img, int xStart, int yStart, int imgWidth, int im
             
             // MiniFB à la macro suivant qui fait la même chose : MFB_ARGB
             uint32_t pixelColor = (img[idx + 3] << 24 | img[idx] << 16 | img[idx + 1] << 8 | img[idx + 2]);
+
+            
 
             if (img[idx + 3] != 0)
             {

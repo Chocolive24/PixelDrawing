@@ -8,6 +8,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include "Utility.cpp"
+
 // Structs 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -93,9 +95,9 @@ int playingSoundsCount = 0;
 uint8_t* loadEntireFile(const char* filePath)
 {
     FILE* file = fopen(filePath, "rb");
-    fseek(file, 0, SEEK_END);
-    size_t size = ftell(file);
-    fseek(file, 0, SEEK_SET);
+    fseek(file, 0, SEEK_END); // pose le curseur qui lit le fichier à la fin. 
+    size_t size = ftell(file); // retourne l'endroit ou est le curseur (ici à la fin car on cherche la taille du fichier).
+    fseek(file, 0, SEEK_SET); // SEEK_SET set le curseur à l'endroit souhaité (ici 0).
 
     uint8_t* memory = (uint8_t*)malloc(size);
     fread(memory, size, 1, file);

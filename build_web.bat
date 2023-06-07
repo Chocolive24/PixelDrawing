@@ -1,8 +1,8 @@
-call C:\Users\olivi\source\repos\Sae\Module4\Exercices\PixelDrawing\emsdk\emsdk_env.bat
+call C:\Users\olivi\source\repos\Tools\emsdk\emsdk_env.bat
 
 mkdir bin
 
-call C:\Users\olivi\source\repos\Sae\Module4\Exercices\PixelDrawing\emsdk\upstream\emscripten\emcc code\main.cpp ^
+call C:\Users\olivi\source\repos\Tools\emsdk\upstream\emscripten\em++ code\main.cpp ^
     -o bin\game.js ^
     -std=c++20 ^
     -Wall -Wextra ^

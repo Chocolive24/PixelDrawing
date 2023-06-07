@@ -92,6 +92,8 @@
         "__tree": "cpp",
         "__tuple": "cpp",
         "__verbose_abort": "cpp",
-        "string_view": "cpp"
-    }
+        "string_view": "cpp",
+        "future": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }
