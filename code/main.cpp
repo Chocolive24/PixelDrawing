@@ -9,66 +9,14 @@
 #include "Enemy.cpp"
 #include "Input.cpp"
 #include "LevelEditor.cpp"
+#include "RunnerGame.cpp"
 #include "Utility.cpp"
 
-// Structs
-// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-typedef struct Player
-{
-    bitmap_t sprite;
-    int xStartPos, yStartPos;
-    int xPos, yPos;
-    int halfWidth, halfHeight;
-    bool isJumping;
-    int jumpHeight;
-    int score;
-
-    int GetBottomPos()
-    {
-        return (int)(yPos + sprite.pixel_size_y / 2);
-    }
-}
-Player;
-
-// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Variables 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 struct mfb_window *window;
-
-bool gameStarted = false;
-bool gameOver = false;
-
-bool mustApplyGravity = false;
-
-int startGameSpeed = 2;
-float gameSpeed = startGameSpeed;
-int   adjustedGameSpeed = gameSpeed;
-float remainingPixelToParcour;
-
-char scoreText[15];
-int scoreTextPosX = 36, scoreTextPosY = 0.1 * FRAME_BUFFER_HEIGHT;
-
-Player player
-{ 
-    player.sprite = LoadImage("assets/Penguin.png"), 
-    player.xStartPos = 25, player.yStartPos = 100 - (int)(player.sprite.pixel_size_y / 2),
-    player.xPos = player.xStartPos, player.yPos = player.yStartPos,
-    player.halfWidth = player.sprite.pixel_size_x / 2, player.halfHeight = player.sprite.pixel_size_y / 2,
-    player.isJumping = false,
-    player.jumpHeight = 50,
-    player.score = 0
-};
-
-int startScoreSpeed = 10;
-int scoreSpeed = startScoreSpeed;
-int frameCounter, rndFrame, frameToUpdateScore;
-
-mfb_timer* timer = mfb_timer_create();
-double deltaTime, enemySpawnDeltaTime, scoreDeltaTime;
-double rndSpawnTime, timeToUpdateScore;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -272,7 +220,7 @@ void HandleEnemySpawn()
 
 void HandleFootstepsSound()
 {
-    if (soundFrameCounter % 10 - (timeToUpdateScore / 2) == 0 && !player.isJumping)
+    if (soundFrameCounter % 10 - (frameToUpdateScore / 2) == 0 && !player.isJumping)
     {
         stepSoundCount++;
 
@@ -293,7 +241,6 @@ void UpdateScore()
 
     if (frameCounter % frameToUpdateScore == 0)
     {
-        scoreDeltaTime = 0.0;
         player.score++;
 
         if (player.score % 50 == 0)
@@ -312,6 +259,8 @@ void UpdateScore()
             scoreTextPosX += 4;
         }
     }
+
+    snprintf(scoreText, 15, "score : %i", player.score);
 }
 
 void DisplayGameOverBox()
@@ -363,9 +312,8 @@ void UpdateGame()
         UpdateScore();
 
         HandleFootstepsSound();
-
-        snprintf(scoreText, 15, "score : %i", player.score);
     }
+
     else 
     {
         DisplayGameOverBox();
@@ -374,10 +322,6 @@ void UpdateGame()
 
 void Update()
 {
-    double lastRenderedFrameTime = -1000;
-    double nowTime;
-    double targetDeltaTime =  1.f/60.f;
-
     do 
     {
         #ifdef __EMSCRIPTEN__
@@ -414,8 +358,6 @@ void Update()
 
         memset(windowBuffer, 0, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
         memset(frameBuffer, 0, FRAME_BUFFER_WIDTH * FRAME_BUFFER_HEIGHT * sizeof(uint32_t));
-
-        
 
         DrawBackground(gameSpeed, adjustedGameSpeed, gameOver, gameStarted);
         DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y);
