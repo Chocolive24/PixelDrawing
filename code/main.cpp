@@ -20,6 +20,8 @@ struct mfb_window *window;
 
 uint32_t fps = 60;
 
+bool gameStarted = false;
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Functions 
@@ -50,8 +52,6 @@ void HandleInputs()
     {
         exit(0);
     }
-
-    
 
     // ------------------------------------------------------
 
@@ -129,9 +129,6 @@ void Update()
         lastRenderedFrameTime = nowTime;
         #endif
 
-        HandleInputs();
-        UpdateLevelEditor();
-
         memcpy(previousKeyStates, keyStates, sizeof(keyStates));
         memcpy(previousMouseButtonStates, mouseButtonStates, sizeof(mouseButtonStates));
 
@@ -146,8 +143,12 @@ void Update()
             break;
         }
 
+        HandleInputs();
+
+        UpdateLevelEditor();
+
         memset(windowBuffer, 0, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
-        memset(frameBuffer, 0, FRAME_BUFFER_WIDTH * FRAME_BUFFER_HEIGHT * sizeof(uint32_t));
+        memset(frameBuffer,  0, FRAME_BUFFER_WIDTH * FRAME_BUFFER_HEIGHT * sizeof(uint32_t));
 
         DrawBackground(gameSpeed, adjustedGameSpeed, gameOver, gameStarted);
         DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y);

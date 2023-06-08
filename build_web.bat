@@ -24,4 +24,3 @@ call C:\Users\olivi\source\repos\Tools\emsdk\upstream\emscripten\em++ code\main.
     -sEXPORTED_RUNTIME_METHODS=ccall,cwrap ^
     -sASYNCIFY ^
     --no-entry ^
-    -O3 ^

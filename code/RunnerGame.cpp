@@ -3,7 +3,6 @@
 #include "Drawing.cpp"
 #include "Enemy.cpp"
 #include "Input.cpp"
-#include "LevelEditor.cpp"
 #include "Utility.cpp"
 
 // Structs
@@ -32,7 +31,6 @@ Player;
 // Variables 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-bool gameStarted = false;
 bool gameOver = false;
 
 bool mustApplyGravity = false;

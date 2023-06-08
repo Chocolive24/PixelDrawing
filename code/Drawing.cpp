@@ -28,6 +28,7 @@ bitmap_t;
 #define RED  0xFFFF0000
 #define DARK_RED  0xFF660000
 #define BLUE 0xFF0000FF
+#define LIGHT_BLUE 0xFF6ACFFA
 #define GREEN 0xFF00FF00
 #define BLACK 0xFF000000
 #define WHITE 0xFFFFFFFF
