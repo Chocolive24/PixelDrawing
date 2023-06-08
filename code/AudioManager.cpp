@@ -92,23 +92,11 @@ int playingSoundsCount = 0;
 // Functions 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-uint8_t* loadEntireFile(const char* filePath)
-{
-    FILE* file = fopen(filePath, "rb");
-    fseek(file, 0, SEEK_END); // pose le curseur qui lit le fichier à la fin. 
-    size_t size = ftell(file); // retourne l'endroit ou est le curseur (ici à la fin car on cherche la taille du fichier).
-    fseek(file, 0, SEEK_SET); // SEEK_SET set le curseur à l'endroit souhaité (ici 0).
-
-    uint8_t* memory = (uint8_t*)malloc(size);
-    fread(memory, size, 1, file);
-    fclose(file);
-
-    return memory;
-}
-
 SoundClip loadSoundClip(const char* filePath)
 {
-    uint8_t* file = loadEntireFile(filePath);
+    // TODO: check if reading past the end of the file.
+
+    uint8_t* file = loadEntireFile(filePath).ptr;
 
     // Fichier wav on wikipedia for all info.
     // Check if the RIFF constant is in the file -> constant which is always in .wav files.

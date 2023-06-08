@@ -267,10 +267,12 @@ void DrawBitmapInRangeWithColor(unsigned char* fontMap, int xStart, int yStart, 
     }
 }
 
-void resize_bitmap(uint32_t* dest, int dest_sx, int dest_sy, uint32_t* src, int src_sx, int src_sy)
+void ResizeBuffer(uint32_t* dest, int dest_sx, int dest_sy, uint32_t* src, int src_sx, int src_sy)
 {
-    for (int y = 0; y < dest_sy; y++) {
-        for (int x = 0; x < dest_sx; x++) {
+    for (int y = 0; y < dest_sy; y++) 
+    {
+        for (int x = 0; x < dest_sx; x++) 
+        {
             int src_x = x * src_sx / dest_sx;
             int src_y = y * src_sy / dest_sy;
             dest[y*dest_sx + x] = src[src_y*src_sx + src_x];

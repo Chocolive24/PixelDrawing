@@ -1,8 +1,16 @@
 #pragma once
 
 #include "Drawing.cpp"
+#include "Input.cpp"
+#include "Utility.cpp"
 
 #define TILE_PX 8
+
+enum SerializeMode
+{
+    SER_MODE_READ = 0,
+    SER_MODE_WRITE = 1,
+};
 
 enum TileType
 {
@@ -10,6 +18,14 @@ enum TileType
     TILE_GRASS = 1,
     TILE_WATER = 2,
     TILE_COUNT
+};
+
+struct Serializer
+{
+    SerializeMode mode;
+    uint8_t* buffer; // 1 byte non signés (8 bits) = char*
+    int      bufferCapacity;
+    int      bufferUsed; // "cursor of were we are reading / writing in buffer"
 };
 
 struct Entity
@@ -20,26 +36,82 @@ struct Entity
 // Variables 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+// Editor variables
+// ---------------------------------------------------------------
+
+Serializer historySteps[256];
+int historyStepCount = 0;
+
+// ---------------------------------------------------------------
+
+// Level variables 
+// ---------------------------------------------------------------
+
 int tiles[10 * 10];
+
+bool tilesModified = false; // For Undo system.
 
 Entity entities[100];
 int entityCount = 0;
 
+// ---------------------------------------------------------------
+
 // Functions 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void Serialize(Serializer* serializer, void* ptr, size_t size)
+{
+    if (serializer->mode == SER_MODE_READ)
+    {
+        size_t remainingBytes = serializer->bufferCapacity - serializer->bufferUsed;
+
+        if(remainingBytes < size)
+        {
+            LOG_ERROR("Serializer tried to read past end of buffer");
+            exit(-1);
+        }
+
+        memcpy(ptr, serializer->buffer + serializer->bufferUsed, size);
+        serializer->bufferUsed += size;
+    }
+    else 
+    {
+        size_t remainingCapacity = serializer->bufferCapacity - serializer->bufferUsed;
+
+        if(remainingCapacity < size)
+        {
+            LOG_ERROR("Serializer out of memory");
+            exit(-1);
+        }
+
+        memcpy(serializer->buffer + serializer->bufferUsed, ptr, size);
+        serializer->bufferUsed += size;
+    }
+}
+
+void SerializeLevel(Serializer* serializer)
+{
+    // Tiles
+    Serialize(serializer, tiles, sizeof(tiles));
+
+    // Entities
+    Serialize(serializer, &entityCount, sizeof(int));
+    Serialize(serializer, entities, sizeof(Entity) * entityCount);
+}
 
 void SaveLevel()
 {
     LOG("Saving Level...");
 
+    Serializer serializer{};
+    serializer.mode = SER_MODE_WRITE;
+    serializer.bufferCapacity = 1000;
+    serializer.buffer = (uint8_t*)malloc(serializer.bufferCapacity);
+
+    SerializeLevel(&serializer);
+
     FILE* file = fopen("save.level", "wb");
-
-    // Tiles
-    fwrite(tiles, sizeof(tiles), 1, file);
-
-    // Entites
-    fwrite(&entityCount, sizeof(int), 1, file);
-    fwrite(entities, sizeof(entities), 1, file);
+    fwrite(serializer.buffer, serializer.bufferUsed, 1, file);
 
     fclose(file);
 }
@@ -48,16 +120,64 @@ void LoadLevel()
 {
     LOG("Loading Level...");
 
-    FILE* file = fopen("save.level", "rb");
+    Span fileData = loadEntireFile("save.level");
 
-    // Tiles
-    fread(tiles, sizeof(tiles), 1, file);
+    Serializer serializer{};
+    serializer.mode = SER_MODE_READ;
+    serializer.buffer = fileData.ptr;
+    serializer.bufferCapacity = fileData.size;
+    serializer.bufferUsed = 0; // Just to be explicit.
 
-    // Entities
-    fread(&entityCount, sizeof(int), 1, file);
-    fread(entities, sizeof(entities), 1, file);
+    SerializeLevel(&serializer);
+}
 
-    fclose(file);
+void HistoryCommit()
+{
+    LOG("COMMIT");
+
+    Serializer serializer{};
+    serializer.mode = SER_MODE_WRITE;
+    serializer.bufferCapacity = 1000;
+    serializer.buffer = (uint8_t*)malloc(serializer.bufferCapacity);
+
+    SerializeLevel(&serializer);
+
+    printf("history %i\n", historyStepCount);
+
+    historySteps[historyStepCount++] = serializer;
+
+    printf("history %i\n", historyStepCount);
+}
+
+void Undo()
+{
+    LOG("UNDO");
+
+    printf("history %i\n", historyStepCount);
+
+    if (historyStepCount <= 1)
+    {
+        LOG("Nothing to undo");
+        return;
+    }
+
+    if (historyStepCount >= ARR_LEN(historySteps) - 1)
+    {
+        LOG("WARNING : undo stack is full !");
+        return;
+    }
+
+    Serializer serializer = historySteps[historyStepCount - 2];
+    free(historySteps[historyStepCount - 1].buffer);
+    historyStepCount--;
+
+    printf("history %i\n", historyStepCount);
+
+    serializer.mode = SER_MODE_READ;
+    serializer.bufferCapacity = serializer.bufferUsed;
+    serializer.bufferUsed = 0;
+
+    SerializeLevel(&serializer);
 }
 
 void SpawnEntity(int x, int y)
@@ -73,6 +193,12 @@ void SpawnEntity(int x, int y)
     };
 
     entities[entityCount++] = entity;
+}
+
+void InitializeLevelEditor()
+{
+    // Commit a blank state for the tile map to undo the first paint.
+    HistoryCommit();
 }
 
 void DrawTiles()
@@ -95,13 +221,21 @@ void DrawTiles()
             if (mouseX >= x * TILE_PX && mouseX < (x * TILE_PX) + TILE_PX && 
                 mouseY >= y * TILE_PX && mouseY < (y * TILE_PX) + TILE_PX)
             {
-                if (OnMouseBeingPressed(MOUSE_LEFT))
+                if (MouseBeingPressed(MOUSE_LEFT))
                 {
                     tiles[y * 10 + x] = TILE_GRASS;
+                    tilesModified = true;
                 }
-                if (OnMouseBeingPressed(MOUSE_RIGHT))
+                if (MouseBeingPressed(MOUSE_RIGHT))
                 {
                     tiles[y * 10 + x] = TILE_WATER;
+                    tilesModified = true;
+                }
+
+                if (MouseWasPressed(MOUSE_LEFT) && KeyBeingPressed(KB_KEY_LEFT_CONTROL))
+                {
+                    SpawnEntity(mouseX, mouseY);
+                    tilesModified = true;
                 }
             }
         }
@@ -120,6 +254,27 @@ void DrawEntities()
 
 void UpdateLevelEditor()
 {
+    if (KeyWasPressed(KB_KEY_S))
+    {
+        SaveLevel();
+    }
+
+    if (KeyWasPressed(KB_KEY_L))
+    {
+        LoadLevel();
+    }
+
+    if ((KeyBeingPressed(KB_KEY_LEFT_CONTROL) || KeyBeingPressed(KB_KEY_LEFT_SUPER))  && KeyWasPressed(KB_KEY_Y)) // Z
+    {
+        Undo();
+    }
+
+    if (tilesModified && (MouseWasPressed(MOUSE_LEFT) || MouseWasPressed(MOUSE_RIGHT)))
+    {
+        HistoryCommit();
+        tilesModified = false;
+    }
+
     DrawTiles();
 
     DrawEntities();

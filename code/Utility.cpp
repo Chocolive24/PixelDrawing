@@ -29,8 +29,20 @@
 #define MAX(a, b) ((a > b) ? a : b)
 #define MIN(a, b) ((a < b) ? a : b)
 
+
+//Structs
+// ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+struct Span // Envergure / espace -> une tranche de mémoire.
+{
+    uint8_t* ptr;
+    size_t size;
+};
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------
+
 // Variables 
-// // ----------------------------------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------------------------------------
 
 std::random_device os_seed;
 uint_least32_t seed = os_seed();
@@ -42,6 +54,22 @@ float monitorScaleX, monitorScaleY;
 
 // Functions 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+Span loadEntireFile(const char* filePath)
+{
+    Span span{};
+
+    FILE* file = fopen(filePath, "rb");
+    fseek(file, 0, SEEK_END); // pose le curseur qui lit le fichier à la fin. 
+    span.size = ftell(file); // retourne l'endroit ou est le curseur (ici à la fin car on cherche la taille du fichier).
+    fseek(file, 0, SEEK_SET); // SEEK_SET set le curseur à l'endroit souhaité (ici 0).
+
+    span.ptr = (uint8_t*)malloc(span.size);
+    fread(span.ptr, span.size, 1, file);
+    fclose(file);
+
+    return span;
+}
 
 int GetRandomInt(int min, int max)
 {

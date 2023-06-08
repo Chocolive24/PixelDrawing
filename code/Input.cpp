@@ -26,17 +26,17 @@ void OnKeyboardEvent(struct mfb_window *window, mfb_key key, mfb_key_mod mod, bo
     keyStates[key] = isPressed;
 }
 
-bool OnKeyBeingPressed(mfb_key key)
+bool KeyBeingPressed(mfb_key key)
 {
     return keyStates[key];
 }
 
-bool OnKeyPressed(mfb_key key)
+bool KeyWasPressed(mfb_key key)
 {
     return !previousKeyStates[key] && keyStates[key];
 }
 
-bool OnKeyReleased(mfb_key key)
+bool KeyWasReleased(mfb_key key)
 {
     return previousKeyStates[key] && !keyStates[key];
 }
@@ -57,12 +57,12 @@ void OnMouseButtonEvent(struct mfb_window *window, mfb_mouse_button button, mfb_
     mouseButtonStates[button] = isPressed;
 }
 
-bool OnMouseBeingPressed(mfb_mouse_button button)
+bool MouseBeingPressed(mfb_mouse_button button)
 {
     return previousMouseButtonStates[button];
 }
 
-bool OnMousePressed(mfb_mouse_button button)
+bool MouseWasPressed(mfb_mouse_button button)
 {
     return previousMouseButtonStates[button] && !mouseButtonStates[button];
 }
