@@ -5,6 +5,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include "Input.cpp"
 #include "Utility.cpp"
 
 // Structs 
@@ -17,6 +18,30 @@ typedef struct bitmap_t
   uint32_t* pixels;
 } 
 bitmap_t;
+
+struct Rect
+{
+    int xPos, yPos;
+    int width, height;
+    uint32_t color;
+};
+
+struct Text
+{
+    const char* literalString;
+    int xPos, yPos;
+    uint32_t color;
+};
+
+struct Button
+{
+    Rect rect;
+    uint32_t color = rect.color;
+    uint32_t selectedColor;
+    Text text;
+    bool isSelected;
+    void (*actionFunc)();
+};
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -111,11 +136,14 @@ void DrawVerticalLine(int x, int yStart, int yEnd, uint32_t color)
     }
 }
 
-void DrawFullRect(int xStart, int yStart, int width, int height, uint32_t color)
+void DrawFullRect(int xStart, int yStart, int width, int height, uint32_t color, bool centered)
 {
-    // xStart = (int)(xStart - width / 2);
-    // yStart = (int)(yStart - height / 2);
-
+    if (centered)
+    {
+        xStart = (int)(xStart - width / 2);
+        yStart = (int)(yStart - height / 2);
+    }
+    
     int xEnd = width + xStart;
     int yEnd = height + yStart;
 
@@ -129,10 +157,13 @@ void DrawFullRect(int xStart, int yStart, int width, int height, uint32_t color)
     }
 }
 
-void DrawEmptyRect(int xStart, int yStart, int width, int height, uint32_t color)
+void DrawEmptyRect(int xStart, int yStart, int width, int height, uint32_t color, bool centered)
 {
-    // xStart = (int)(xStart - width / 2);
-    // yStart = (int)(yStart - height / 2);
+    if (centered)
+    {
+        xStart = (int)(xStart - width / 2);
+        yStart = (int)(yStart - height / 2);
+    }
 
     int xEnd = width + xStart - 1;
     int yEnd = height + yStart - 1;
@@ -410,3 +441,25 @@ void DrawTextWithColor(const char* literalString, int xStart, int yStart, uint32
 }
 
 #pragma endregion Font Functions
+
+Button CreateButton(Rect rect, uint32_t color, uint32_t selectedColor, Text text, void (*actionFunc)())
+{
+    //Rect rect{xPos - width / 2, yPos - height / 2, width, height, color};
+
+    Button button{rect, color, selectedColor, text, false, actionFunc};
+
+    return button;
+}
+
+void DrawButton(Button* b)
+{
+    // Buttons are always centered
+    b->isSelected = IsMouseOverButton(b->rect.xPos - b->rect.width / 2, b->rect.yPos - b->rect.height / 2, b->rect.width, b->rect.height); 
+
+    b->rect.color = b->isSelected ? b->selectedColor : b->color;
+
+    DrawFullRect (b->rect.xPos, b->rect.yPos, b->rect.width, b->rect.height, b->rect.color, true);
+    DrawEmptyRect(b->rect.xPos, b->rect.yPos,  b->rect.width, b->rect.height, WHITE, true);
+
+    DrawTextWithColor(b->text.literalString, b->text.xPos, b->text.yPos, b->text.color);
+}

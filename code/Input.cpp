@@ -67,6 +67,11 @@ bool MouseWasPressed(mfb_mouse_button button)
     return previousMouseButtonStates[button] && !mouseButtonStates[button];
 }
 
+bool IsMouseOverButton(int buttonX, int buttonY, int buttonW, int buttonH)
+{
+    return mouseX >= buttonX && mouseX < buttonX + buttonW && mouseY >= buttonY && mouseY < buttonY + buttonH;
+}
+
 // -----------------------------------------------------------------------------------------------------------------------------------
 
 void InitializeInputCallbacks(mfb_window* window)

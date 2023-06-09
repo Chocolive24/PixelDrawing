@@ -122,37 +122,7 @@ void SerializeLevel(Serializer* serializer)
     Serialize(serializer, entities, sizeof(Entity) * entityCount);
 }
 
-void SaveLevel()
-{
-    LOG("Saving Level...");
 
-    Serializer serializer{};
-    serializer.mode = SER_MODE_WRITE;
-    serializer.bufferCapacity = 10000;
-    serializer.buffer = (uint8_t*)malloc(serializer.bufferCapacity);
-
-    SerializeLevel(&serializer);
-
-    FILE* file = fopen("save.level", "wb");
-    fwrite(serializer.buffer, serializer.bufferUsed, 1, file);
-
-    fclose(file);
-}
-
-void LoadLevel()
-{
-    LOG("Loading Level...");
-
-    Span fileData = loadEntireFile("save.level");
-
-    Serializer serializer{};
-    serializer.mode = SER_MODE_READ;
-    serializer.buffer = fileData.ptr;
-    serializer.bufferCapacity = fileData.size;
-    serializer.bufferUsed = 0; // Just to be explicit.
-
-    SerializeLevel(&serializer);
-}
 
 void HistoryCommit()
 {
@@ -195,6 +165,40 @@ void Undo()
     serializer.bufferUsed = 0;
 
     SerializeLevel(&serializer);
+}
+
+void SaveLevel()
+{
+    LOG("Saving Level...");
+
+    Serializer serializer{};
+    serializer.mode = SER_MODE_WRITE;
+    serializer.bufferCapacity = 10000;
+    serializer.buffer = (uint8_t*)malloc(serializer.bufferCapacity);
+
+    SerializeLevel(&serializer);
+
+    FILE* file = fopen("save.level", "wb");
+    fwrite(serializer.buffer, serializer.bufferUsed, 1, file);
+
+    fclose(file);
+}
+
+void LoadLevel()
+{
+    LOG("Loading Level...");
+
+    Span fileData = loadEntireFile("save.level");
+
+    Serializer serializer{};
+    serializer.mode = SER_MODE_READ;
+    serializer.buffer = fileData.ptr;
+    serializer.bufferCapacity = fileData.size;
+    serializer.bufferUsed = 0; // Just to be explicit.
+
+    SerializeLevel(&serializer);
+
+    HistoryCommit();
 }
 
 void SpawnEntity(int x, int y)
@@ -249,14 +253,14 @@ void DrawButtonTiles()
     {
         TileButton* t = &tileButtons[i];
 
-        DrawFullRect(t->xPos, t->yPos, TILE_PX, TILE_PX, t->color);
+        DrawFullRect(t->xPos, t->yPos, TILE_PX, TILE_PX, t->color, false);
 
         bool isMouseOverButton = mouseX >= t->xPos && mouseX < t->xPos + TILE_PX &&
                                  mouseY >= t->yPos && mouseY < t->yPos + TILE_PX;
 
         if (isMouseOverButton || t->isSelected)
         {
-            DrawEmptyRect(t->xPos, t->yPos, TILE_PX, TILE_PX, WHITE);
+            DrawEmptyRect(t->xPos, t->yPos, TILE_PX, TILE_PX, WHITE, false);
 
             if (MouseWasPressed(MOUSE_LEFT) && isMouseOverButton)
             {
@@ -283,15 +287,15 @@ void DrawLevelTiles()
 
             if (tile_type == TILE_GRASS)
             {
-                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, GREEN);
+                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, GREEN, false);
             }
             else if (tile_type == TILE_WATER)
             {
-                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, RED);
+                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, RED, false);
             }
             else 
             {
-                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, LIGHT_BLUE);
+                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, LIGHT_BLUE, false);
             }
 
             if (mouseX >= x * TILE_PX && mouseX < (x * TILE_PX) + TILE_PX && 
@@ -345,7 +349,7 @@ void DrawEntities()
     {
         Entity* entity = &entities[i];
 
-        DrawFullRect(entity->xPos, entity->yPos, 4, 4, RED);
+        DrawFullRect(entity->xPos, entity->yPos, 4, 4, RED, false);
     }
 }
 
@@ -381,7 +385,7 @@ void UpdateLevelEditor()
         mouseY >= 0 && mouseY < TILEMAP_HEIGHT)
     {
         // Draw the cursor
-        DrawEmptyRect(mouseX / TILE_PX * TILE_PX, mouseY / TILE_PX * TILE_PX, TILE_PX, TILE_PX, WHITE);
+        DrawEmptyRect(mouseX / TILE_PX * TILE_PX, mouseY / TILE_PX * TILE_PX, TILE_PX, TILE_PX, WHITE, false);
     }
 
     if (tilesModified && (MouseWasPressed(MOUSE_LEFT) || MouseWasPressed(MOUSE_RIGHT)))

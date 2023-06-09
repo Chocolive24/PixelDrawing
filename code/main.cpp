@@ -4,14 +4,12 @@
 #include <malloc.h>
 
 #include "AudioManager.cpp"
-#include "Background.cpp"
 #include "Drawing.cpp"
-#include "Enemy.cpp"
 #include "Input.cpp"
 #include "LevelEditor.cpp"
-#include "RunnerGame.cpp"
 #include "Utility.cpp"
 
+// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Variables 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -20,7 +18,13 @@ struct mfb_window *window;
 
 uint32_t fps = 60;
 
-bool gameStarted = false;
+bool gameStarted, levelSelectOpen ,editorOpen;
+
+// Title screen variables 
+// ---------------------------------------------------------------
+
+Button titleScreenButtons[3];
+int  titleScrButtonCount = 0;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -34,23 +38,21 @@ void HandleInputs()
 
     if (KeyWasPressed(KB_KEY_SPACE))
     {
-        if (gameStarted && ! gameOver)
-        {
-            Jump(player);
-        }
-        else if (!gameStarted)
-        {
-            gameStarted = true;
-        }
-        else if (gameOver)
-        {
-            Restart();
-        }
+        editorOpen = true;
     }
     
     if (KeyWasPressed(KB_KEY_ESCAPE))
     {
-        exit(0);
+        if (gameStarted || levelSelectOpen || editorOpen)
+        {
+            gameStarted = false;
+            levelSelectOpen = false;
+            editorOpen = false;
+        }
+        else 
+        {
+            exit(0);
+        }
     }
 
     // ------------------------------------------------------
@@ -68,6 +70,56 @@ void HandleInputs()
 
 #pragma endregion Input Functions
 
+void CreateTitleScreenButton(Rect rect, uint32_t color, uint32_t selectedColor, Text text, void (*actionFunc)())
+{
+    if (titleScrButtonCount >= 3)
+    {
+        return;
+    }
+
+    Button button = CreateButton(rect, color, selectedColor, text, actionFunc);
+
+    titleScreenButtons[titleScrButtonCount++] = button;
+}
+
+void RunGame()
+{
+    InitializeLevelEditor();
+    LoadLevel();
+    gameStarted = true;
+}
+
+void RunLevelSelection()
+{
+    levelSelectOpen = true;
+    LOG("LEVEL SELECTION");
+}
+
+void RunLevelEditor()
+{
+    InitializeLevelEditor();
+    ResetTilemap();
+    editorOpen = true;
+}
+
+void CreateTitleScreen()
+{
+    Rect gameRectB{ ((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)), 100, 20, BLUE };
+    Text gameTextB{ "start game", ((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)), WHITE };
+
+    CreateTitleScreenButton(gameRectB, BLUE, LIGHT_BLUE, gameTextB, &RunGame);
+
+    Rect lvlSltRecB{ ((int)(FRAME_BUFFER_WIDTH / 2)), 2 * ((int)(FRAME_BUFFER_HEIGHT / 4)), 100, 20, BLUE };
+    Text lvlSltTextB{ "select level", ((int)(FRAME_BUFFER_WIDTH / 2)), 2 * ((int)(FRAME_BUFFER_HEIGHT / 4)), WHITE };
+
+    CreateTitleScreenButton(lvlSltRecB, BLUE, LIGHT_BLUE, lvlSltTextB, &RunLevelSelection);
+
+    Rect editorRectB{ ((int)(FRAME_BUFFER_WIDTH / 2)), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)), 100, 20, BLUE };
+    Text editorTextB{ "level editor", ((int)(FRAME_BUFFER_WIDTH / 2)), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)), WHITE };
+
+    CreateTitleScreenButton(editorRectB, BLUE, LIGHT_BLUE, editorTextB, &RunLevelEditor);
+}
+
 void Start()
 {
     window = mfb_open_ex("Game", WINDOW_WIDTH, WINDOW_HEIGHT, WF_RESIZABLE);
@@ -84,17 +136,14 @@ void Start()
     frameBuffer =  (uint32_t*) malloc(FRAME_BUFFER_WIDTH * FRAME_BUFFER_HEIGHT * 4);
 
     mfb_get_monitor_scale(window, &monitorScaleX, &monitorScaleY);
-
     mfb_set_target_fps(fps);
-
     InitializeInputCallbacks(window);
 
     windows_enable_colors_in_command_prompt();
 
     SetupSound();
 
-    InitializeLevelEditor();
-    InitializeRunnerGame();
+    CreateTitleScreen();
 }
 
 #pragma region Update Functions
@@ -102,15 +151,17 @@ void Start()
 
 void UpdateTitleScreen()
 {
-    DrawFullRect (((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4, 90, 28, BLACK);
-    DrawEmptyRect(((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4, 90, 28, WHITE);
-    DrawTextWithColor("press space", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 4), WHITE);
-    DrawTextWithColor("to start", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, ((int)(FRAME_BUFFER_HEIGHT / 4)) + 9, WHITE);
-    
-    DrawFullRect (((int)(FRAME_BUFFER_WIDTH / 2)), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4, 90, 28, BLACK);
-    DrawEmptyRect(((int)(FRAME_BUFFER_WIDTH / 2)), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4, 90, 28, WHITE);
-    DrawTextWithColor("press escape", (int)(FRAME_BUFFER_WIDTH / 2), 90, WHITE); 
-    DrawTextWithColor("to exit", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, 99, WHITE); 
+    for (int i = 0; i < titleScrButtonCount; i++)
+    {
+        Button* b = &titleScreenButtons[i];
+
+        DrawButton(b);
+
+        if (b->isSelected && MouseWasPressed(MOUSE_LEFT))
+        {
+            b->actionFunc();
+        }
+    }
 }
 
 void Update()
@@ -142,24 +193,27 @@ void Update()
             window = NULL;
             break;
         }
-
-        HandleInputs();
-
-        UpdateLevelEditor();
-
+        
         memset(windowBuffer, 0, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
         memset(frameBuffer,  0, FRAME_BUFFER_WIDTH * FRAME_BUFFER_HEIGHT * sizeof(uint32_t));
 
-        DrawBackground(gameSpeed, adjustedGameSpeed, gameOver, gameStarted);
-        DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y);
+        HandleInputs();
 
-        if (!gameStarted)
+        if (gameStarted)
+        {
+            UpdateLevelEditor();
+        }
+        else if (levelSelectOpen)
+        {
+            //UpdateLevelSelection()
+        }
+        else if (editorOpen)
+        {
+            UpdateLevelEditor();
+        }
+        else 
         {
             UpdateTitleScreen();
-        }
-        else
-        {
-            UpdateRunnerGame();
         }
 
     } while(mfb_wait_sync(window));

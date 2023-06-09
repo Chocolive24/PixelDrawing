@@ -31,6 +31,12 @@ Player;
 // Variables 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+struct mfb_window *window;
+
+uint32_t fps = 60;
+
+bool gameStarted = false;
+
 bool gameOver = false;
 
 bool mustApplyGravity = false;
@@ -105,16 +111,6 @@ void Restart()
     scoreTextPosX = 36;
 }
 
-void InitializeRunnerGame()
-{
-    CreateBackground();
-
-    rndFrame = GetRandomInt(50, 60);
-
-    SoundClip clip = loadSoundClip("assets/RaceTheme.wav");
-    PlaySoundClip(clip, 0.5f, 440, 0, 0, true);
-}
-
 void HandleJump()
 {
     if (player.yPos <= player.yStartPos - player.jumpHeight) // || OnKeyReleased(KB_KEY_SPACE) && player.yPos < player.yStartPos
@@ -139,6 +135,96 @@ void HandleJump()
     {
         player.yPos += 3.f;
     }
+}
+
+void HandleInputs()
+{
+    // On Key Pressed Events.
+    // ------------------------------------------------------
+
+    if (KeyWasPressed(KB_KEY_SPACE))
+    {
+        if (gameStarted && ! gameOver)
+        {
+            Jump(player);
+        }
+        else if (!gameStarted)
+        {
+            gameStarted = true;
+        }
+        else if (gameOver)
+        {
+            Restart();
+        }
+    }
+    
+    if (KeyWasPressed(KB_KEY_ESCAPE))
+    {
+        exit(0);
+    }
+
+    // ------------------------------------------------------
+
+    // On Key Released Events.
+    // ------------------------------------------------------
+
+    if (KeyWasReleased(KB_KEY_ENTER))
+    {
+        printf("Enter released \n");
+    }
+
+    // ------------------------------------------------------
+}
+
+#pragma endregion Input Functions
+
+void Start()
+{
+    window = mfb_open_ex("Game", WINDOW_WIDTH, WINDOW_HEIGHT, WF_RESIZABLE);
+
+    if (!window)
+    {
+        exit(1);
+    }
+        
+    // malloc alloue de la mémoire (ici 800 * 600 * 4 (4 bytes pour un int32) de mémoire)
+    // buffer est un terme pour designer un ensemble de données 
+    // un frame buffer contient les data des pixels de la fenêtre de jeu.
+    windowBuffer = (uint32_t*) malloc(WINDOW_MEMORY);
+    frameBuffer =  (uint32_t*) malloc(FRAME_BUFFER_WIDTH * FRAME_BUFFER_HEIGHT * 4);
+
+    mfb_get_monitor_scale(window, &monitorScaleX, &monitorScaleY);
+
+    mfb_set_target_fps(fps);
+
+    InitializeInputCallbacks(window);
+
+    windows_enable_colors_in_command_prompt();
+
+    SetupSound();
+
+    CreateBackground();
+
+    rndFrame = GetRandomInt(50, 60);
+
+    SoundClip clip = loadSoundClip("assets/RaceTheme.wav");
+    PlaySoundClip(clip, 0.5f, 440, 0, 0, true);
+}
+
+#pragma region Update Functions
+
+
+void UpdateTitleScreen()
+{
+    DrawFullRect (((int)(FRAME_BUFFER_WIDTH / 2) - 45), ((int)(FRAME_BUFFER_HEIGHT / 4) - 14) + 4, 90, 28, BLACK);
+    DrawEmptyRect(((int)(FRAME_BUFFER_WIDTH / 2) - 45), ((int)(FRAME_BUFFER_HEIGHT / 4) - 14) + 4, 90, 28, WHITE);
+    DrawTextWithColor("press space", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 4), WHITE);
+    DrawTextWithColor("to start", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, ((int)(FRAME_BUFFER_HEIGHT / 4)) + 9, WHITE);
+    
+    DrawFullRect (((int)(FRAME_BUFFER_WIDTH / 2) - 45), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4 - 14, 90, 28, BLACK);
+    DrawEmptyRect(((int)(FRAME_BUFFER_WIDTH / 2) - 45), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4 - 14, 90, 28, WHITE);
+    DrawTextWithColor("press escape", (int)(FRAME_BUFFER_WIDTH / 2), 90, WHITE); 
+    DrawTextWithColor("to exit", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, 99, WHITE); 
 }
 
 bool IsCollisionDetected(Player &player, Enemy &enemy)
@@ -271,4 +357,63 @@ void UpdateRunnerGame()
 
     frameCounter++;
     soundFrameCounter++;
+}
+
+void Update()
+{
+    do
+    {
+        #ifdef __EMSCRIPTEN__
+        nowTime = mfb_timer_now(timer);
+        deltaTime = nowTime - lastRenderedFrameTime;
+        targetDeltaTime = 1.f/60.f;
+        if (deltaTime < targetDeltaTime) {
+            // si on a pas depassé notre target delta time, on rend la main au browser puis on revient en haut de la boucle
+            mfb_wait_sync(window);
+            continue;
+        }
+        lastRenderedFrameTime = nowTime;
+        #endif
+
+        memcpy(previousKeyStates, keyStates, sizeof(keyStates));
+        memcpy(previousMouseButtonStates, mouseButtonStates, sizeof(mouseButtonStates));
+
+        ResizeBuffer(windowBuffer, WINDOW_WIDTH, WINDOW_HEIGHT, frameBuffer, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+
+        int state;
+        state = mfb_update_ex(window, windowBuffer, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+        if (state < 0) 
+        {
+            window = NULL;
+            break;
+        }
+        
+        memset(windowBuffer, 0, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
+        memset(frameBuffer,  0, FRAME_BUFFER_WIDTH * FRAME_BUFFER_HEIGHT * sizeof(uint32_t));
+
+        HandleInputs();
+
+        DrawBackground(gameSpeed, adjustedGameSpeed, gameOver, gameStarted);
+        DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y);
+
+        if (!gameStarted)
+        {
+            UpdateTitleScreen();
+        }
+        else
+        {
+            UpdateRunnerGame();
+        }
+
+    } while (mfb_wait_sync(window));
+}
+
+int main()
+{
+    Start();
+
+    Update();
+
+    return 0;
 }
