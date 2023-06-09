@@ -1,6 +1,6 @@
 #pragma once
 
-#define GRAVITY 2.f
+#define GRAVITY 1.f
 #define MAX_G_VEL 10.f
 
 struct Vector2F

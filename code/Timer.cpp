@@ -16,6 +16,5 @@ double deltaTime, totalTime;
 void TimerTick()
 {
     deltaTime = mfb_timer_delta(timer);
-    printf("%f \n", deltaTime);
     totalTime += deltaTime;
 }
