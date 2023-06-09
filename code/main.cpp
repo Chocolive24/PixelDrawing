@@ -7,7 +7,9 @@
 #include "Drawing.cpp"
 #include "Input.cpp"
 #include "LevelEditor.cpp"
+#include "Player.cpp"
 #include "Utility.cpp"
+#include "Timer.cpp"
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -164,6 +166,15 @@ void UpdateTitleScreen()
     }
 }
 
+void UpdateGame()
+{
+    TimerTick();
+
+    UpdateLevelEditor();
+
+    UpdatePlayer();
+}
+
 void Update()
 {
     do 
@@ -201,7 +212,7 @@ void Update()
 
         if (gameStarted)
         {
-            UpdateLevelEditor();
+            UpdateGame();
         }
         else if (levelSelectOpen)
         {

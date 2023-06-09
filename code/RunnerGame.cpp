@@ -1,3 +1,5 @@
+#pragma once
+
 #include "AudioManager.cpp"
 #include "Background.cpp"
 #include "Drawing.cpp"

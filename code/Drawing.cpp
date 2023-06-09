@@ -8,6 +8,23 @@
 #include "Input.cpp"
 #include "Utility.cpp"
 
+#pragma region Colors
+
+#define RED  0xFFFF0000
+#define DARK_RED  0xFF660000
+#define BLUE 0xFF0000FF
+#define LIGHT_BLUE 0xFF6ACFFA
+#define GREEN 0xFF00FF00
+#define BLACK 0xFF000000
+#define WHITE 0xFFFFFFFF
+#define GREY 0xFFAAAAAA
+#define LIGHT_GREY 0x004C99
+
+#pragma endregion Colors
+
+#define CHAR_WIDTH 7
+#define CHAR_HEIGHT 9
+
 // Structs 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -47,22 +64,6 @@ struct Button
 
 // Variables 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-#pragma region Colors
-
-#define RED  0xFFFF0000
-#define DARK_RED  0xFF660000
-#define BLUE 0xFF0000FF
-#define LIGHT_BLUE 0xFF6ACFFA
-#define GREEN 0xFF00FF00
-#define BLACK 0xFF000000
-#define WHITE 0xFFFFFFFF
-#define LIGHT_GREY 0x004C99
-
-#pragma endregion Colors
-
-#define CHAR_WIDTH 7
-#define CHAR_HEIGHT 9
 
 uint32_t* frameBuffer;
 uint32_t* windowBuffer;

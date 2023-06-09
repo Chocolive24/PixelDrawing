@@ -21,8 +21,9 @@ enum SerializeMode
 enum TileType
 {
     TILE_EMPTY = 0,
-    TILE_GRASS = 1,
-    TILE_WATER = 2,
+    TILE_GROUND = 1,
+    TILE_DANGER = 2,
+    TILE_SPRING,
     TILE_COUNT
 };
 
@@ -60,7 +61,7 @@ TileButton tileButtons[10];
 int tileButtonCount = 0;
 uint32_t tileButtonSprites[10]
 {
-    GREEN, RED
+    WHITE, RED, BLUE
 };
 
 TileButton* selectedButton = nullptr;
@@ -241,8 +242,9 @@ void InitializeLevelEditor()
     int xPos = TILEMAP_WIDTH + (2 * TILE_PX);
     int yPos = -TILE_PX;
 
-    CreateTileButton(xPos, yPos += (2 * TILE_PX), GREEN, TILE_GRASS);
-    CreateTileButton(xPos, yPos += (2 * TILE_PX), RED,   TILE_WATER);
+    CreateTileButton(xPos, yPos += (2 * TILE_PX), GREY, TILE_GROUND);
+    CreateTileButton(xPos, yPos += (2 * TILE_PX), RED,   TILE_DANGER);
+    CreateTileButton(xPos, yPos += (2 * TILE_PX), BLUE,   TILE_SPRING);
 
     SelectButton(&tileButtons[0]);
 }
@@ -285,13 +287,17 @@ void DrawLevelTiles()
         {
             int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
 
-            if (tile_type == TILE_GRASS)
+            if (tile_type == TILE_GROUND)
             {
-                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, GREEN, false);
+                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, GREY, false);
             }
-            else if (tile_type == TILE_WATER)
+            else if (tile_type == TILE_DANGER)
             {
                 DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, RED, false);
+            }
+            else if (tile_type == TILE_SPRING)
+            {
+                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, BLUE, false);
             }
             else 
             {
