@@ -246,6 +246,13 @@ void InitializeLevelEditor()
     CreateTileButton(xPos, yPos += (2 * TILE_PX), RED,   TILE_DANGER);
     CreateTileButton(xPos, yPos += (2 * TILE_PX), BLUE,   TILE_SPRING);
 
+    for (int i = 0; i < TILE_COUNT - 1; i++)
+    {
+        TileButton* t = &tileButtons[i];
+
+        t->isSelected = false;
+    }
+
     SelectButton(&tileButtons[0]);
 }
 
