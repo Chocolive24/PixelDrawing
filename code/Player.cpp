@@ -14,6 +14,11 @@ typedef struct Player
     Vector2F velocity;
     Vector2F size;
     float moveSpeed;
+    float jumpHeight;
+    float finalJumpPos;
+    bool isJumping;
+
+
 
     float GetBottomPos()
     {
@@ -38,7 +43,8 @@ Player player
     player.position = Vector2F{12, 12},
     player.velocity = Vector2F{0, 0},
     player.size     = Vector2F{TILE_PX, TILE_PX},
-    player.moveSpeed = 100.f
+    player.moveSpeed = 100.f,
+    player.jumpHeight = -(2 * TILE_PX)
 };
 
 
@@ -46,7 +52,6 @@ Player player
 
 // Functions 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 bool IsRightCollision()
 {
@@ -111,7 +116,6 @@ bool IsBottomCollision()
     return false;
 }
 
-
 void HandleMove()
 {
     if (KeyBeingPressed(KB_KEY_D))
@@ -155,22 +159,39 @@ void HandleMove()
     }
 }
 
+void HandleJump()
+{
+    if (KeyWasPressed(KB_KEY_SPACE) && !player.isJumping)
+    {
+        player.isJumping = true;
+        player.finalJumpPos = player.position.y - player.jumpHeight;
+        printf("%f \n", player.finalJumpPos);
+    }
+
+    if (player.isJumping)
+    {
+        player.velocity.y = player.jumpHeight * deltaTime;
+    }
+    
+}
+
 void UpdatePlayer()
 {
     HandleMove();
+    HandleJump();
 
     if (!IsBottomCollision()) //&& !IsBottomCollision())
     {
         player.velocity.y += player.velocity.y < 5 ? GRAVITY * deltaTime : 0.f;
     }
-    else 
+    else if (!player.isJumping)
     {
         player.velocity.y = 0.f;
         player.position.y = ((int)player.position.y / TILE_PX * TILE_PX) + 4;
     }
 
     player.position += player.velocity;
-    //printf("%f %f\n", player.position.x, player.position.y);
+    //printf("%f %f\n", player.velocity.x, player.velocity.y);
     
 
     DrawFullRect(player.position.x, player.position.y, TILE_PX, TILE_PX, GREEN ,true);
