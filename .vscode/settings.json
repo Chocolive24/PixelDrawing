@@ -93,7 +93,8 @@
         "__tuple": "cpp",
         "__verbose_abort": "cpp",
         "string_view": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "button": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

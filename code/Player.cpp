@@ -10,222 +10,191 @@
 struct Player
 {
     // Technical attributes
-    Vector2F position;
-    Vector2F velocity;
-    Vector2F size;
-    float moveSpeed;
-    float initalJumpVelocity, maxJumpHeight, maxJumpTime;
+    Vector2F position = Vector2F{12, 12};
+    Vector2F velocity = Vector2F{0, 0};
+    Vector2F size     = Vector2F{TILE_PX, TILE_PX};
+    float moveSpeed   = 100.f;
+    float initalJumpVelocity = 0.f, maxJumpHeight = 18.f, maxJumpTime = 0.5f, jumpGravity = 0.f;
     bool isJumping, isGrounded;
+
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    // Functions 
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     float GetBottomPos()
     {
         return position.y + TILE_PX / 2;
     }
-};
 
-enum CollisionType
-{
-    TOP,
-    RIGHT,
-    LEFT,
-    BOTTOM
-};
-
-// Variables 
-// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-Player player
-{ 
-    player.position = Vector2F{12, 12},
-    player.velocity = Vector2F{0, 0},
-    player.size     = Vector2F{TILE_PX, TILE_PX},
-    player.moveSpeed = 100.f,
-    player.initalJumpVelocity = 0.f, player.maxJumpHeight = 18.f, player.maxJumpTime = 0.5f
-
-};
-
-float jumpGravity;
-
-// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-// Functions 
-// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-void SetupJumpVariables()
-{
-    // th = t / 2
-    // The Apex (sommet) time of the jump parabola is the half max jump time, because a parabola is symetric.
-    float timeToApex = player.maxJumpTime / 2;
-    printf("timeToAPex %f \n", timeToApex);
-
-    // g = -2h / th^2
-    jumpGravity = (2 * player.maxJumpHeight) / (timeToApex * timeToApex);
-
-    // v0 = 2h / th 
-    player.initalJumpVelocity = (2 * player.maxJumpHeight) / timeToApex;
-
-    printf("%f %f \n", jumpGravity, player.initalJumpVelocity);
-}
-
-bool IsRightCollision()
-{
-    for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
+    void SetupJumpVariables()
     {
-        for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
-        {
-            int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
+        // th = t / 2
+        // The Apex (sommet) time of the jump parabola is the half max jump time, because a parabola is symetric.
+        float timeToApex = maxJumpTime / 2;
 
-            if (player.position.x - (player.size.x / 2) <  (x * TILE_PX) + TILE_PX &&
-                player.position.x + (player.size.x / 2) >= (x * TILE_PX) &&
-                player.position.y - (player.size.y / 2) <  (y * TILE_PX) + TILE_PX &&
-                player.position.y + (player.size.y / 2) >  (y * TILE_PX) && tile_type == TILE_GROUND)
-            {
-                return true;
-            }
-        }
+        // g = -2h / th^2
+        jumpGravity = (2 * maxJumpHeight) / (timeToApex * timeToApex);
+
+        // v0 = 2h / th 
+        initalJumpVelocity = (2 * maxJumpHeight) / timeToApex;
     }
 
-    return false;
-}
-
-bool IsLeftCollision()
-{
-    for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
+    bool IsRightCollision()
     {
-        for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
+        for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
         {
-            int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
-
-            if (player.position.x - (player.size.x / 2) <=  (x * TILE_PX) + TILE_PX &&
-                player.position.x + (player.size.x / 2) > (x * TILE_PX) &&
-                player.position.y - (player.size.y / 2) <  (y * TILE_PX) + TILE_PX &&
-                player.position.y + (player.size.y / 2) >  (y * TILE_PX) && tile_type == TILE_GROUND)
+            for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
             {
-                return true;
+                int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
+
+                if (position.x - (size.x / 2) <  (x * TILE_PX) + TILE_PX &&
+                    position.x + (size.x / 2) >= (x * TILE_PX) &&
+                    position.y - (size.y / 2) <  (y * TILE_PX) + TILE_PX &&
+                    position.y + (size.y / 2) >  (y * TILE_PX) && tile_type == TILE_GROUND)
+                {
+                    return true;
+                }
             }
         }
+
+        return false;
     }
 
-    return false;
-}
-
-bool IsBottomCollision()
-{
-    for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
+    bool IsLeftCollision()
     {
-        for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
+        for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
         {
-            int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
-
-            if (player.position.x - (player.size.x / 2) <  (x * TILE_PX) + TILE_PX &&
-                player.position.x + (player.size.x / 2) >  (x * TILE_PX) &&
-                player.position.y - (player.size.y / 2) <  (y * TILE_PX) + TILE_PX &&
-                player.position.y + (player.size.y / 2) >=  (y * TILE_PX) && tile_type == TILE_GROUND)
+            for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
             {
-                return true;
+                int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
+
+                if (position.x - (size.x / 2) <=  (x * TILE_PX) + TILE_PX &&
+                    position.x + (size.x / 2) > (x * TILE_PX) &&
+                    position.y - (size.y / 2) <  (y * TILE_PX) + TILE_PX &&
+                    position.y + (size.y / 2) >  (y * TILE_PX) && tile_type == TILE_GROUND)
+                {
+                    return true;
+                }
             }
         }
+
+        return false;
     }
 
-    return false;
-}
-
-void InitializePlayer()
-{
-    SetupJumpVariables();
-}
-
-void HandleMove()
-{
-    if (KeyBeingPressed(KB_KEY_D))
+    bool IsBottomCollision()
     {
-        if (IsRightCollision())
+        for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
         {
-            player.velocity.x = 0;
-            player.position.x = ((int)player.position.x / TILE_PX * TILE_PX) + 4;
-            return;
+            for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
+            {
+                int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
+
+                if (position.x - (size.x / 2) <  (x * TILE_PX) + TILE_PX &&
+                    position.x + (size.x / 2) >  (x * TILE_PX) &&
+                    position.y - (size.y / 2) <  (y * TILE_PX) + TILE_PX &&
+                    position.y + (size.y / 2) >=  (y * TILE_PX) && tile_type == TILE_GROUND)
+                {
+                    return true;
+                }
+            }
         }
-        if (player.velocity.x < player.moveSpeed)
+
+        return false;
+    }
+
+    void HandleMove()
+    {
+        if (KeyBeingPressed(KB_KEY_D))
         {
-            player.velocity.x +=  (player.moveSpeed / 10);
-        }
+            if (IsRightCollision())
+            {
+                velocity.x = 0;
+                position.x = ((int)position.x / TILE_PX * TILE_PX) + 4;
+                return;
+            }
+            if (velocity.x < moveSpeed)
+            {
+                velocity.x +=  (moveSpeed / 10);
+            }
+            else 
+            {
+                velocity.x = moveSpeed;
+            }
+        }   
+        else if (KeyBeingPressed(KB_KEY_A))
+        {
+            if (IsLeftCollision())
+            {
+                velocity.x = 0;
+                position.x = ((int)position.x / TILE_PX * TILE_PX) + 4;
+                return;
+            }
+
+            if (velocity.x > -(moveSpeed))
+            {
+                velocity.x -= (moveSpeed / 10);
+            }
+            else 
+            {
+                velocity.x = -(moveSpeed);
+            }
+        } 
         else 
         {
-            player.velocity.x = player.moveSpeed;
+            velocity.x = 0;
         }
-    }   
-    else if (KeyBeingPressed(KB_KEY_A))
+    }
+
+    void HandleJump()
     {
-        if (IsLeftCollision())
+        if (KeyWasPressed(KB_KEY_SPACE) && !isJumping)
         {
-            player.velocity.x = 0;
-            player.position.x = ((int)player.position.x / TILE_PX * TILE_PX) + 4;
-            return;
+            isJumping = true;
+            velocity.y = -(initalJumpVelocity);
         }
-
-        if (player.velocity.x > -(player.moveSpeed))
-        {
-            player.velocity.x -= (player.moveSpeed / 10);
-        }
-        else 
-        {
-            player.velocity.x = -(player.moveSpeed);
-        }
-    } 
-    else 
-    {
-        player.velocity.x = 0;
-    }
-}
-
-void HandleJump()
-{
-    if (KeyWasPressed(KB_KEY_SPACE) && !player.isJumping)
-    {
-        player.isJumping = true;
-        player.velocity.y = -(player.initalJumpVelocity);
-        printf("%f, \n", player.initalJumpVelocity);
-    }
-}
-
-void UpdatePlayer()
-{
-    player.position += player.velocity * deltaTime;
-
-    HandleMove();
-   
-    //printf("jump %f ", player.velocity.y * deltaTime);
-
-    if (!IsBottomCollision()) //&& !IsBottomCollision())
-    {
-        //player.velocity.y += player.velocity.y < MAX_G_VEL ? GRAVITY * deltaTime : 0.f;
-        player.velocity.y += player.isJumping ? jumpGravity * deltaTime : GRAVITY;
-        player.isGrounded = false;
-    }
-    else if (IsBottomCollision && !player.isGrounded && player.isJumping)
-    {
-        player.isJumping = false;
-        player.isGrounded = true;
-        player.velocity.y = 0.f;
-        player.position.y = ((int)player.position.y / TILE_PX * TILE_PX) + 4;
-    }
-    else if (!player.isJumping)
-    {
-        player.isGrounded = true;
-        player.velocity.y = 0.f;
-        player.position.y = ((int)player.position.y / TILE_PX * TILE_PX) + 4;
     }
 
-    HandleJump();
+    void Update()
+    {
+        position += velocity * deltaTime;
 
+        HandleMove();
     
+        //printf("jump %f ", velocity.y * deltaTime);
 
-    //player.position += player.velocity * deltaTime;
+        if (!IsBottomCollision()) //&& !IsBottomCollision())
+        {
+            //velocity.y += velocity.y < MAX_G_VEL ? GRAVITY * deltaTime : 0.f;
+            velocity.y += isJumping ? jumpGravity * deltaTime : GRAVITY;
+            isGrounded = false;
+        }
+        else if (IsBottomCollision() && !isGrounded && isJumping)
+        {
+            isJumping = false;
+            isGrounded = true;
+            velocity.y = 0.f;
+            position.y = ((int)position.y / TILE_PX * TILE_PX) + 4;
+        }
+        else if (!isJumping)
+        {
+            isGrounded = true;
+            velocity.y = 0.f;
+            position.y = ((int)position.y / TILE_PX * TILE_PX) + 4;
+        }
 
-    //printf("gravity %f\n ", player.velocity.y * deltaTime);
-    
+        HandleJump();
 
-    DrawFullRect(player.position.x, player.position.y, TILE_PX, TILE_PX, GREEN ,true);
+        
 
-    //DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y);
-}
+        //position += velocity * deltaTime;
+
+        //printf("gravity %f\n ", velocity.y * deltaTime);
+        
+
+        DrawFullRect(position.x, position.y, TILE_PX, TILE_PX, GREEN ,true);
+
+        //DrawBitmap((unsigned char*)sprite.pixels, xPos, yPos, sprite.pixel_size_x, sprite.pixel_size_y);
+    }
+};
+

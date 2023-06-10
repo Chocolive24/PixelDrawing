@@ -19,6 +19,7 @@
 #define WHITE 0xFFFFFFFF
 #define GREY 0xFFAAAAAA
 #define LIGHT_GREY 0x004C99
+#define ALPHA 0x00000000
 
 #pragma endregion Colors
 
@@ -48,16 +49,6 @@ struct Text
     const char* literalString;
     int xPos, yPos;
     uint32_t color;
-};
-
-struct Button
-{
-    Rect rect;
-    uint32_t color = rect.color;
-    uint32_t selectedColor;
-    Text text;
-    bool isSelected;
-    void (*actionFunc)();
 };
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -442,25 +433,3 @@ void DrawTextWithColor(const char* literalString, int xStart, int yStart, uint32
 }
 
 #pragma endregion Font Functions
-
-Button CreateButton(Rect rect, uint32_t color, uint32_t selectedColor, Text text, void (*actionFunc)())
-{
-    //Rect rect{xPos - width / 2, yPos - height / 2, width, height, color};
-
-    Button button{rect, color, selectedColor, text, false, actionFunc};
-
-    return button;
-}
-
-void DrawButton(Button* b)
-{
-    // Buttons are always centered
-    b->isSelected = IsMouseOverButton(b->rect.xPos - b->rect.width / 2, b->rect.yPos - b->rect.height / 2, b->rect.width, b->rect.height); 
-
-    b->rect.color = b->isSelected ? b->selectedColor : b->color;
-
-    DrawFullRect (b->rect.xPos, b->rect.yPos, b->rect.width, b->rect.height, b->rect.color, true);
-    DrawEmptyRect(b->rect.xPos, b->rect.yPos,  b->rect.width, b->rect.height, WHITE, true);
-
-    DrawTextWithColor(b->text.literalString, b->text.xPos, b->text.yPos, b->text.color);
-}

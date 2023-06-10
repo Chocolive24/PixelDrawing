@@ -4,6 +4,7 @@
 #include <malloc.h>
 
 #include "AudioManager.cpp"
+#include "Button.cpp"
 #include "Drawing.cpp"
 #include "Input.cpp"
 #include "LevelEditor.cpp"
@@ -27,6 +28,8 @@ bool gameStarted, levelSelectOpen ,editorOpen;
 
 Button titleScreenButtons[3];
 int  titleScrButtonCount = 0;
+
+Player player{ };
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -72,14 +75,24 @@ void HandleInputs()
 
 #pragma endregion Input Functions
 
-void CreateTitleScreenButton(Rect rect, uint32_t color, uint32_t selectedColor, Text text, void (*actionFunc)())
+void CreateTitleScreenButton(Rect rect, uint32_t color, uint32_t selectedColor, Text text, void (*activateEffect)())
 {
     if (titleScrButtonCount >= 3)
     {
         return;
     }
 
-    Button button = CreateButton(rect, color, selectedColor, text, actionFunc);
+    Rect frame {rect.xPos, rect.yPos, rect.width, rect.height, WHITE};
+
+    Button button{rect, frame, color, selectedColor, text, false, activateEffect};
+
+    // Rect rect{xPos - width / 2, yPos - height / 2, width, height, color};
+
+    // rect.xPos -= rect.width / 2
+
+    // Button button{rect, color, selectedColor, text, false, actionFunc};
+
+    // Button button = CreateButton(rect, color, selectedColor, text, actionFunc);
 
     titleScreenButtons[titleScrButtonCount++] = button;
 }
@@ -88,7 +101,7 @@ void RunGame()
 {
     InitializeLevelEditor();
     LoadLevel();
-    InitializePlayer();
+    player.SetupJumpVariables();
     gameStarted = true;
 }
 
@@ -108,7 +121,7 @@ void RunLevelEditor()
 void CreateTitleScreen()
 {
     Rect gameRectB{ ((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)), 100, 20, BLUE };
-    Text gameTextB{ "start game", ((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)), WHITE };
+    Text gameTextB{ "start JEU", ((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)), WHITE };
 
     CreateTitleScreenButton(gameRectB, BLUE, LIGHT_BLUE, gameTextB, &RunGame);
 
@@ -158,11 +171,11 @@ void UpdateTitleScreen()
     {
         Button* b = &titleScreenButtons[i];
 
-        DrawButton(b);
+        b->Update();
 
         if (b->isSelected && MouseWasPressed(MOUSE_LEFT))
         {
-            b->actionFunc();
+            b->activateEffect();
         }
     }
 }
@@ -171,7 +184,7 @@ void UpdateGame()
 {
     UpdateLevelEditor();
 
-    UpdatePlayer();
+    player.Update();
 }
 
 void Update()
