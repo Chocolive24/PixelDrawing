@@ -88,6 +88,7 @@ void RunGame()
 {
     InitializeLevelEditor();
     LoadLevel();
+    InitializePlayer();
     gameStarted = true;
 }
 
@@ -168,8 +169,6 @@ void UpdateTitleScreen()
 
 void UpdateGame()
 {
-    TimerTick();
-
     UpdateLevelEditor();
 
     UpdatePlayer();
@@ -207,6 +206,8 @@ void Update()
         
         memset(windowBuffer, 0, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
         memset(frameBuffer,  0, FRAME_BUFFER_WIDTH * FRAME_BUFFER_HEIGHT * sizeof(uint32_t));
+
+        TimerTick();
 
         HandleInputs();
 
