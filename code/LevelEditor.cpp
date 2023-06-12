@@ -23,9 +23,11 @@ enum SerializeMode
 enum TileType
 {
     TILE_EMPTY = 0,
-    TILE_GROUND = 1,
-    TILE_DANGER = 2,
+    TILE_WALL,
+    TILE_PLAYER_WALL,
+    TILE_FIRE,
     TILE_SPRING,
+    TILE_FRUIT,
     TILE_COUNT
 };
 
@@ -64,11 +66,11 @@ int historyStepCount = 0;
 TileButton tileButtons[10];
 int tileButtonCount = 0;
 
-// uint32_t tileButtonSprites[10]
-// {
-//     WHITE, RED, BLUE
-// };
-bitmap_t tileWallSprite = LoadImage("assets/tileWall.png");
+bitmap_t tileWallSprite = LoadImage("assets/tileGreyWall.png");
+bitmap_t tilePlayerWallSprite = LoadImage("assets/tileOrangeWall.png");
+bitmap_t tileFireSprite = LoadImage("assets/tileFire.png");
+bitmap_t tileSpringSprite = LoadImage("assets/tileSpring.png");
+bitmap_t tileFruitSprite = LoadImage("assets/tileFruit.png");
 
 TileButton* selectedButton = nullptr;
 
@@ -289,7 +291,7 @@ void DrawButtonTiles()
     {
         TileButton* t = &tileButtons[i];
 
-        DrawBitmap((unsigned char*)t->sprite.pixels, t->xPos, t->yPos, t->sprite.pixel_size_x, t->sprite.pixel_size_y);
+        DrawBitmap((unsigned char*)t->sprite.pixels, t->xPos, t->yPos, t->sprite.pixel_size_x, t->sprite.pixel_size_y, false);
 
         //DrawFullRect(t->xPos, t->yPos, TILE_PX, TILE_PX, t->color, false);
 
@@ -306,7 +308,7 @@ void DrawButtonTiles()
 
         if (isMouseOverButton || t->isSelected)
         {
-            DrawEmptyRect(t->xPos, t->yPos, TILE_PX, TILE_PX, WHITE, false);
+            DrawEmptyRect(t->xPos - 1, t->yPos - 1, TILE_PX + 2, TILE_PX + 2, WHITE, false);
 
             if (MouseWasPressed(MOUSE_LEFT) && isMouseOverButton)
             {
@@ -331,18 +333,30 @@ void DrawLevelTiles()
         {
             int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
 
-            if (tile_type == TILE_GROUND)
+            if (tile_type == TILE_WALL)
             {
-                //DrawBitmap((unsigned char*)tileWallSprite.pixels, x, y, tileWallSprite.pixel_size_x, tileWallSprite.pixel_size_y);
-                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, GREY, false);
+                DrawBitmap((unsigned char*)tileWallSprite.pixels, x * TILE_PX, y * TILE_PX, 
+                            tileWallSprite.pixel_size_x, tileWallSprite.pixel_size_y, false);
             }
-            else if (tile_type == TILE_DANGER)
+            else if (tile_type == TILE_PLAYER_WALL)
             {
-                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, RED, false);
+                DrawBitmap((unsigned char*)tilePlayerWallSprite.pixels, x * TILE_PX, y * TILE_PX, 
+                            tilePlayerWallSprite.pixel_size_x, tilePlayerWallSprite.pixel_size_y, false);
+            }
+            else if (tile_type == TILE_FIRE)
+            {
+                DrawBitmap((unsigned char*)tileFireSprite.pixels, x * TILE_PX, y * TILE_PX, 
+                            tileFireSprite.pixel_size_x, tileFireSprite.pixel_size_y, false);
             }
             else if (tile_type == TILE_SPRING)
             {
-                DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, BLUE, false);
+                DrawBitmap((unsigned char*)tileSpringSprite.pixels, x * TILE_PX, y * TILE_PX, 
+                            tileSpringSprite.pixel_size_x, tileSpringSprite.pixel_size_y, false);
+            }
+            else if (tile_type == TILE_FRUIT)
+            {
+                 DrawBitmap((unsigned char*)tileFruitSprite.pixels, x * TILE_PX, y * TILE_PX, 
+                            tileFruitSprite.pixel_size_x, tileFruitSprite.pixel_size_y, false);
             }
             else 
             {
@@ -386,9 +400,14 @@ void DrawLevelTiles()
                     {
                         if (isInGame)
                         {
+                            if (currentTileType == TILE_WALL)
+                            {
+                                continue;
+                            }
+
                             for (int i = 0; i < tileButtonCount; i++)
                             {
-                                if (tileButtons[i].tileType == tiles[y * TILEMAP_WIDTH_PX + x])
+                                if (tileButtons[i].tileType == tiles[y * TILEMAP_WIDTH_PX + x] )
                                 {
                                     tileButtons[i].tileNbr++;
                                 }

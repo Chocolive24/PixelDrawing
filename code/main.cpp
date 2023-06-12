@@ -101,15 +101,19 @@ void RunGame()
 {
     ClearTileButtons();
 
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_GROUND, 10);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_SPRING, 10);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tilePlayerWallSprite,   TILE_PLAYER_WALL, 10);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,     TILE_SPRING, 10);
 
     InitializeLevelEditor(true);
     LoadLevel();
-    player.SetupJumpVariables();
-    player.position.x = player.startPos.x;
-    player.position.y = player.startPos.y;
+    
+    player.SelfReset();
+    player.isEditingLvl = true;
+
     gameStarted = true;
+
+    // SoundClip clip = loadSoundClip("assets/mainTheme.wav");
+    // PlaySoundClip(clip, 0.5f, 440, 0, 0, true);
 }
 
 void RunLevelSelection()
@@ -122,9 +126,10 @@ void RunLevelEditor()
 {
     ClearTileButtons();
 
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_GROUND, 10);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,    TILE_DANGER, 10);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_SPRING, 10);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_WALL, 10);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFireSprite,    TILE_FIRE, 10);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,   TILE_SPRING, 10);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFruitSprite,   TILE_FRUIT, 10);
 
     InitializeLevelEditor(false);
     ResetTilemap();
@@ -195,8 +200,15 @@ void UpdateTitleScreen()
 
 void UpdateGame()
 {
-    UpdateLevelEditor();
-
+    if (player.isEditingLvl)
+    {
+        UpdateLevelEditor();
+    }
+    else 
+    {
+        DrawLevelTiles();
+    }
+    
     player.Update();
 }
 

@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#define GRAVITY 5.f
-#define MAX_G_VEL 10.f
+#define GRAVITY 3.f
+#define MAX_G_VEL 5.f
 
 struct Vector2F
 {

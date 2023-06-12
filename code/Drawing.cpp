@@ -189,11 +189,15 @@ bitmap_t LoadImage(const char* filePath)
     return img;
 }
 
-void DrawBitmap(unsigned char* img, int xStart, int yStart, int imgWidth, int imgHeight)
+void DrawBitmap(unsigned char* img, int xStart, int yStart, int imgWidth, int imgHeight, bool centered)
 {
-    xStart = (int)(xStart - imgWidth / 2);
-    yStart = (int)(yStart - imgHeight / 2);
 
+    if (centered)
+    {
+        xStart = (int)(xStart - imgWidth / 2);
+        yStart = (int)(yStart - imgHeight / 2);
+    }
+    
     int xEnd = imgWidth + xStart;
     int yEnd = imgHeight + yStart;
 
@@ -205,8 +209,6 @@ void DrawBitmap(unsigned char* img, int xStart, int yStart, int imgWidth, int im
             
             // MiniFB à la macro suivant qui fait la même chose : MFB_ARGB
             uint32_t pixelColor = (img[idx + 3] << 24 | img[idx] << 16 | img[idx + 1] << 8 | img[idx + 2]);
-
-            
 
             if (img[idx + 3] != 0)
             {

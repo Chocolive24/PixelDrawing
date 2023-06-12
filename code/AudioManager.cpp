@@ -80,7 +80,9 @@ Sound* jumpSound;
 // C major chord
 Sound* c;
 Sound* d;
+Sound* e;
 Sound* g;
+Sound* a;
 
 Sound* gameoverSound;
 
