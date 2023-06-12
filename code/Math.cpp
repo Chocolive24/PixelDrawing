@@ -10,6 +10,11 @@ struct Vector2F
     float x, y;
 };
 
+struct Vector2Int
+{
+    int x, y;
+};
+
 // Variables 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -39,4 +44,4 @@ Vector2F& operator+=(Vector2F& a, const Vector2F& b)
 Vector2F operator*(Vector2F v, float scale)
 {
     return Vector2F { v.x * scale, v.y * scale };
-};
+}

@@ -99,9 +99,16 @@ void CreateTitleScreenButton(Rect rect, uint32_t color, uint32_t selectedColor, 
 
 void RunGame()
 {
-    InitializeLevelEditor();
+    ClearTileButtons();
+
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_GROUND, 10);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_SPRING, 10);
+
+    InitializeLevelEditor(true);
     LoadLevel();
     player.SetupJumpVariables();
+    player.position.x = player.startPos.x;
+    player.position.y = player.startPos.y;
     gameStarted = true;
 }
 
@@ -113,7 +120,13 @@ void RunLevelSelection()
 
 void RunLevelEditor()
 {
-    InitializeLevelEditor();
+    ClearTileButtons();
+
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_GROUND, 10);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,    TILE_DANGER, 10);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_SPRING, 10);
+
+    InitializeLevelEditor(false);
     ResetTilemap();
     editorOpen = true;
 }
@@ -121,7 +134,7 @@ void RunLevelEditor()
 void CreateTitleScreen()
 {
     Rect gameRectB{ ((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)), 100, 20, BLUE };
-    Text gameTextB{ "start JEU", ((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)), WHITE };
+    Text gameTextB{ "start game", ((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)), WHITE };
 
     CreateTitleScreenButton(gameRectB, BLUE, LIGHT_BLUE, gameTextB, &RunGame);
 

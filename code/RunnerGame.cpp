@@ -53,7 +53,7 @@ int scoreTextPosX = 36, scoreTextPosY = 0.1 * FRAME_BUFFER_HEIGHT;
 
 Player player
 { 
-    player.sprite = LoadImage("assets/Penguin.png"), 
+    player.sprite = LoadBitmap("assets/Penguin.png"), 
     player.xStartPos = 25, player.yStartPos = 100 - (int)(player.sprite.pixel_size_y / 2),
     player.xPos = player.xStartPos, player.yPos = player.yStartPos,
     player.halfWidth = player.sprite.pixel_size_x / 2, player.halfHeight = player.sprite.pixel_size_y / 2,

@@ -10,9 +10,11 @@
 struct Player
 {
     // Technical attributes
-    Vector2F position = Vector2F{12, 12};
+    Vector2F startPos = Vector2F{12, 12};
+    Vector2F position = Vector2F{startPos.x, startPos.y};
     Vector2F velocity = Vector2F{0, 0};
-    Vector2F size     = Vector2F{TILE_PX, TILE_PX};
+    Vector2Int size   = Vector2Int{TILE_PX, TILE_PX};
+    int top = position.y - size.y / 2, right = position.x + size.x / 2, left = position.x - size.x / 2, bottom = position.y + size.y / 2;
     float moveSpeed   = 100.f;
     float initalJumpVelocity = 0.f, maxJumpHeight = 18.f, maxJumpTime = 0.5f, jumpGravity = 0.f;
     bool isJumping, isGrounded;
@@ -90,17 +92,54 @@ struct Player
             {
                 int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
 
-                if (position.x - (size.x / 2) <  (x * TILE_PX) + TILE_PX &&
-                    position.x + (size.x / 2) >  (x * TILE_PX) &&
-                    position.y - (size.y / 2) <  (y * TILE_PX) + TILE_PX &&
+                if (position.x - (size.x / 2) <   (x * TILE_PX) + TILE_PX &&
+                    position.x + (size.x / 2) >   (x * TILE_PX) &&
+                    position.y - (size.y / 2) <   (y * TILE_PX) + TILE_PX &&
                     position.y + (size.y / 2) >=  (y * TILE_PX) && tile_type == TILE_GROUND)
                 {
+                   
                     return true;
                 }
             }
         }
 
         return false;
+    }
+
+    bool bottomCol(int x, int y)
+    {
+        return      position.x - (size.x / 2) <   (x * TILE_PX) + TILE_PX &&
+                    position.x + (size.x / 2) >   (x * TILE_PX) &&
+                    position.y - (size.y / 2) <   (y * TILE_PX) + TILE_PX &&
+                    position.y + (size.y / 2) >=  (y * TILE_PX);
+    }
+
+    void COl()
+    {
+        for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
+        {
+            for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
+            {
+                int tileType = tiles[y * TILEMAP_WIDTH_PX + x];
+
+                switch (tileType)
+                {
+                    case TILE_EMPTY:
+                        continue;
+                        break;
+                    case TILE_GROUND:
+                        // Apply effect B
+                        if (bottomCol(x, y))
+                        {
+                            //isGrounded = true;
+                            printf("YOOOOO \n");
+                        }
+                        break;
+                    // Handle other tile types
+                }
+            }
+        }
+
     }
 
     void HandleMove()
@@ -159,6 +198,8 @@ struct Player
     {
         position += velocity * deltaTime;
 
+        //COl();
+
         HandleMove();
     
         //printf("jump %f ", velocity.y * deltaTime);
@@ -186,9 +227,6 @@ struct Player
         HandleJump();
 
         
-
-        //position += velocity * deltaTime;
-
         //printf("gravity %f\n ", velocity.y * deltaTime);
         
 

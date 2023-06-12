@@ -46,7 +46,7 @@ struct Rect
 
 struct Text
 {
-    const char* literalString;
+    char* literalString;
     int xPos, yPos;
     uint32_t color;
 };

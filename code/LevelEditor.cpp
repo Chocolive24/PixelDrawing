@@ -2,7 +2,9 @@
 
 #include "Drawing.cpp"
 #include "Input.cpp"
+#include "Math.cpp"
 #include "Utility.cpp"
+#include "Timer.cpp"
 
 #define TILE_PX 8
 
@@ -38,9 +40,11 @@ struct Serializer
 struct TileButton
 {
     int xPos, yPos;
-    uint32_t color;
+    bitmap_t sprite;
     bool isSelected;
     TileType tileType;
+    int tileNbr;
+    Text tileNbrTxt;
 };
 
 struct Entity
@@ -59,12 +63,18 @@ int historyStepCount = 0;
 
 TileButton tileButtons[10];
 int tileButtonCount = 0;
-uint32_t tileButtonSprites[10]
-{
-    WHITE, RED, BLUE
-};
+
+// uint32_t tileButtonSprites[10]
+// {
+//     WHITE, RED, BLUE
+// };
+bitmap_t tileWallSprite = LoadImage("assets/tileWall.png");
 
 TileButton* selectedButton = nullptr;
+
+int buttonPosX, buttonPosY;
+
+bool isInGame = false;
 
 // ---------------------------------------------------------------
 
@@ -122,8 +132,6 @@ void SerializeLevel(Serializer* serializer)
     Serialize(serializer, &entityCount, sizeof(int));
     Serialize(serializer, entities, sizeof(Entity) * entityCount);
 }
-
-
 
 void HistoryCommit()
 {
@@ -199,7 +207,7 @@ void LoadLevel()
 
     SerializeLevel(&serializer);
 
-    HistoryCommit();
+    //HistoryCommit();
 }
 
 void SpawnEntity(int x, int y)
@@ -217,14 +225,17 @@ void SpawnEntity(int x, int y)
     entities[entityCount++] = entity;
 }
 
-void CreateTileButton(int xPos, int yPos, uint32_t color, TileType tileType)
+void CreateTileButton(int xPos, int yPos, bitmap_t sprite, TileType tileType, int tileNbr)
 {
     if (tileButtonCount >= TILE_COUNT)
     {
         return;
     }
 
-    TileButton t { xPos, yPos, color, false, tileType };
+    char literalString[4];
+    Text text {literalString, xPos +  2 * TILE_PX, yPos + 2, WHITE };
+
+    TileButton t { xPos, yPos, sprite, false, tileType, tileNbr, text };
     tileButtons[tileButtonCount++] = t;
 }
 
@@ -234,17 +245,23 @@ void SelectButton(TileButton* button)
     selectedButton->isSelected = true;
 }
 
-void InitializeLevelEditor()
+void ClearTileButtons()
 {
+    buttonPosX = TILEMAP_WIDTH + (2 * TILE_PX);
+    buttonPosY = -TILE_PX;
+
+    for (int i = 0; i < tileButtonCount; i++)
+    {
+        tileButtons[i] = tileButtons[tileButtonCount--];
+        i--;
+    }
+}
+
+void InitializeLevelEditor(bool isEditorInGame)
+{
+    isInGame = isEditorInGame;
     // Commit a blank state for the tile map to undo the first paint.
     HistoryCommit();
-
-    int xPos = TILEMAP_WIDTH + (2 * TILE_PX);
-    int yPos = -TILE_PX;
-
-    CreateTileButton(xPos, yPos += (2 * TILE_PX), GREY, TILE_GROUND);
-    CreateTileButton(xPos, yPos += (2 * TILE_PX), RED,   TILE_DANGER);
-    CreateTileButton(xPos, yPos += (2 * TILE_PX), BLUE,   TILE_SPRING);
 
     for (int i = 0; i < TILE_COUNT - 1; i++)
     {
@@ -256,13 +273,33 @@ void InitializeLevelEditor()
     SelectButton(&tileButtons[0]);
 }
 
+int GetTileAtPosition(int x, int y)
+{
+    return tiles[y * TILEMAP_WIDTH_PX + x];
+}
+
+Vector2Int GetPositionInTilemap(int x, int y)
+{
+    return Vector2Int{x / TILE_PX * TILE_PX, y / TILE_PX * TILE_PX };
+}
+
 void DrawButtonTiles()
 {
-    for (int i = 0; i < TILE_COUNT - 1; i++)
+    for (int i = 0; i < tileButtonCount; i++)
     {
         TileButton* t = &tileButtons[i];
 
-        DrawFullRect(t->xPos, t->yPos, TILE_PX, TILE_PX, t->color, false);
+        DrawBitmap((unsigned char*)t->sprite.pixels, t->xPos, t->yPos, t->sprite.pixel_size_x, t->sprite.pixel_size_y);
+
+        //DrawFullRect(t->xPos, t->yPos, TILE_PX, TILE_PX, t->color, false);
+
+        if (isInGame)
+        {
+            //snprintf(scoreText, 15, "score : %i", player.score);
+            snprintf(t->tileNbrTxt.literalString, 3, "%i", t->tileNbr);
+
+            DrawText(t->tileNbrTxt.literalString, t->tileNbrTxt.xPos, t->tileNbrTxt.yPos);
+        }
 
         bool isMouseOverButton = mouseX >= t->xPos && mouseX < t->xPos + TILE_PX &&
                                  mouseY >= t->yPos && mouseY < t->yPos + TILE_PX;
@@ -296,6 +333,7 @@ void DrawLevelTiles()
 
             if (tile_type == TILE_GROUND)
             {
+                //DrawBitmap((unsigned char*)tileWallSprite.pixels, x, y, tileWallSprite.pixel_size_x, tileWallSprite.pixel_size_y);
                 DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, GREY, false);
             }
             else if (tile_type == TILE_DANGER)
@@ -321,8 +359,24 @@ void DrawLevelTiles()
                         return;
                     }
 
+                    if (isInGame && selectedButton->tileNbr <= 0)
+                    {
+                        continue;
+                    }
+
+                    if (isInGame && tiles[y * TILEMAP_WIDTH_PX + x] != TILE_EMPTY)
+                    {
+                        continue;
+                    }
+                
                     tiles[y * TILEMAP_WIDTH_PX + x] = selectedButton->tileType;
                     tilesModified = true;
+
+                    if (isInGame)
+                    {
+                        selectedButton->tileNbr--;
+                    }
+                
                 }
                 if (MouseBeingPressed(MOUSE_RIGHT))
                 {
@@ -330,6 +384,17 @@ void DrawLevelTiles()
 
                     if (currentTileType != TILE_EMPTY)
                     {
+                        if (isInGame)
+                        {
+                            for (int i = 0; i < tileButtonCount; i++)
+                            {
+                                if (tileButtons[i].tileType == tiles[y * TILEMAP_WIDTH_PX + x])
+                                {
+                                    tileButtons[i].tileNbr++;
+                                }
+                            }
+                        }
+
                         tiles[y * TILEMAP_WIDTH_PX + x] = TILE_EMPTY;
                         tilesModified = true;
                     }
@@ -398,7 +463,9 @@ void UpdateLevelEditor()
         mouseY >= 0 && mouseY < TILEMAP_HEIGHT)
     {
         // Draw the cursor
-        DrawEmptyRect(mouseX / TILE_PX * TILE_PX, mouseY / TILE_PX * TILE_PX, TILE_PX, TILE_PX, WHITE, false);
+        Vector2Int mPosInTilemap = GetPositionInTilemap(mouseX, mouseY);
+
+        DrawEmptyRect( mPosInTilemap.x, mPosInTilemap.y, TILE_PX, TILE_PX, WHITE, false);
     }
 
     if (tilesModified && (MouseWasPressed(MOUSE_LEFT) || MouseWasPressed(MOUSE_RIGHT)))
