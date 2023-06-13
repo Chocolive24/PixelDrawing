@@ -77,6 +77,9 @@ int soundFrameCounter;
 Sound* stepSound;
 Sound* jumpSound;
 
+SoundClip puzzleTheme;
+SoundClip winTheme;
+
 // C major chord
 Sound* c;
 Sound* d;
@@ -223,6 +226,11 @@ Sound* PlaySound(float amplitude, float frequency, float amplitudeFactor, float 
     return AddSound(amplitude, frequency, amplitudeFactor, frequencyFactor, looping);
 }
 
+void StopSound(Sound& sound)
+{
+    sound.amplitude = 0;
+}
+
 void AudioCallback(float* buffer, int numFrames, int numChannels)
 {
     for (int frame = 0; frame < numFrames; frame++)
@@ -293,5 +301,15 @@ void SetupSound()
     saudio_setup(audioDesc);
 }
 
+void FreeSoundsMemory()
+{
+    free(jumpSound);
+    free(stepSound);
+    free(c);
+    free(d);
+    free(e);
+    free(a);
+    free(g);
+}
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------

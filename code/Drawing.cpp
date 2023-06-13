@@ -310,7 +310,7 @@ void ResizeBuffer(uint32_t* dest, int dest_sx, int dest_sy, uint32_t* src, int s
 
 #pragma region Font Functions
 
-void DrawText(const char* literalString, int xStart, int yStart)
+void DrawMyText(const char* literalString, int xStart, int yStart)
 {
     if (!isFontLoaded)
     {
@@ -432,6 +432,13 @@ void DrawTextWithColor(const char* literalString, int xStart, int yStart, uint32
         charIdx++;
 
     } while (literalString[charIdx] != '\0');
+}
+
+void FreeDrawingMemory()
+{
+    free(windowBuffer);
+    free(frameBuffer);
+    free(pixelFont.pixels);
 }
 
 #pragma endregion Font Functions

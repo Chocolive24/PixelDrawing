@@ -15,10 +15,14 @@ struct Player
     Vector2F velocity = Vector2F{0, 0};
     Vector2Int size   = Vector2Int{TILE_PX, TILE_PX};
     int top = position.y - size.y / 2, right = position.x + size.x / 2, left = position.x - size.x / 2, bottom = position.y + size.y / 2;
-    float moveSpeed   = 100.f;
+    float moveSpeed   = 80.f;
     float initalJumpVelocity = 0.f, maxJumpHeight = 18.f, maxJumpTime = 0.5f, jumpGravity = 0.f;
     bool isJumping, isGrounded;
-    bool isEditingLvl = true;
+    bool isEditingLvl = false;
+    bool hasFinishTheLevel = false;
+
+    int topTile, rigthTile, bottomTile, leftTile;
+    
 
     // Graphical attributes
     bitmap_t sprite = LoadImage("assets/bopy.png");
@@ -54,6 +58,22 @@ struct Player
         velocity = Vector2F{0, 0};
         isJumping = false;
         isGrounded = false;
+        hasFinishTheLevel = false;
+    }
+
+    void GetCollidingTiles()
+    {
+        topTile    = (position.y - (size.y / 2)) / TILE_PX;
+        rigthTile  = (position.x + (size.x / 2)) / TILE_PX;
+        bottomTile = (position.y + (size.x / 2)) / TILE_PX;
+        leftTile   = (position.x - (size.x / 2)) / TILE_PX;
+
+        if (topTile  < 0) topTile  = 0;
+        if (rigthTile  > TILEMAP_WIDTH_PX)  rigthTile  = TILEMAP_WIDTH_PX;
+        if (bottomTile > TILEMAP_HEIGHT_PX) bottomTile = TILEMAP_HEIGHT_PX;
+        if (leftTile < 0) leftTile = 0;
+        
+        //printf("%i %i \n", topTile, rigthTile);
     }
 
     bool IsRightCollision()
@@ -129,11 +149,13 @@ struct Player
 
     void CheckCollisions()
     {
-        for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
+        for (int y = topTile; y <= bottomTile; y++)
         {
-            for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
+            for (int x = leftTile; x <= rigthTile; x++)
             {
                 int tileType = tiles[y * TILEMAP_WIDTH_PX + x];
+
+                DrawEmptyRect(x * TILE_PX, y * TILE_PX, 8, 8, RED, false);
 
                 if (!IsCollision(x, y))
                 {
@@ -147,30 +169,46 @@ struct Player
                         break;
                     case TILE_WALL:
                     case TILE_PLAYER_WALL:
-                        // if (position.y < (y * TILE_PX))
-                        // {
-                        //     isGrounded = true;
-                        //     printf("%f %i \n", position.y, (y * TILE_PX) + TILE_PX / 2);
-                        // }
-
+                        if (position.y < (y * TILE_PX))
+                        {
+                            isGrounded = true;
+                            
+                            return;
+                            printf("%f %i \n", position.y, (y * TILE_PX) + TILE_PX / 2);
+                        }
+                        printf("NOT LA FIIIINNNN");
                         // if (IsCollision(x, y) && position.y > (y * TILE_PX))
                         // {
                         //     // Up Collision
                         // }
-
                         break;
                     case TILE_FIRE:
                         SelfReset();
                         break;
                     case TILE_FRUIT:
-                        LOG("YOU WOON !!!!");
+                        //hasFinishTheLevel = true;
+                        if (!winTheme.samples)
+                        {
+                            winTheme = loadSoundClip("assets/winTheme.wav");
+                            PlaySoundClip(winTheme, 1.f, 440, 0, 0, false);
+                        }
                         break;
-                    
+                    case TILE_SPRING:
+                        if (position.y < (y * TILE_PX))
+                        {
+                            printf("yo");
+                            isJumping = true;
+                            isGrounded = false;
+                            velocity.y = -(initalJumpVelocity * 1.4f);
+                            jumpSound = PlaySound(1.0f, cScale[10], 2.0 / 44100, -0.03, false);
+                        }
+                        break;
                     // Handle other tile types
                 }
             }
         }
 
+        printf("LA FIN\n");
     }
 
     bool IsGrounded()
@@ -206,7 +244,7 @@ struct Player
             }
             if (velocity.x < moveSpeed)
             {
-                velocity.x +=  (moveSpeed / 10);
+                velocity.x +=  (moveSpeed / 5);
             }
             else 
             {
@@ -224,7 +262,7 @@ struct Player
 
             if (velocity.x > -(moveSpeed))
             {
-                velocity.x -= (moveSpeed / 10);
+                velocity.x -= (moveSpeed / 5);
             }
             else 
             {
@@ -239,7 +277,7 @@ struct Player
 
     void HandleJump()
     {
-        if (KeyWasPressed(KB_KEY_SPACE) && !isJumping)
+        if (KeyWasPressed(KB_KEY_SPACE) && !isJumping && isGrounded)
         {
             isJumping = true;
             isGrounded = false;
@@ -267,7 +305,9 @@ struct Player
 
             HandleMove();
 
+            GetCollidingTiles();
             CheckCollisions();
+            //printf("%i \n", isGrounded);
 
             // if (!IsGrounded())
             // {
@@ -299,16 +339,6 @@ struct Player
                 position.y = ((int)position.y / TILE_PX * TILE_PX) + 4;
             }
 
-            if (IsBottomCollision(TILE_SPRING))
-            {
-                printf("yo");
-                isJumping = true;
-                isGrounded = false;
-                velocity.y = -(initalJumpVelocity * 1.4f);
-
-                jumpSound = PlaySound(1.0f, cScale[10], 2.0 / 44100, -0.03, false);
-            }
-
             HandleJump();
 
             
@@ -322,7 +352,6 @@ struct Player
         //DrawFullRect(position.x, position.y, TILE_PX, TILE_PX, GREEN ,true);
 
         DrawBitmap((unsigned char*)sprite.pixels, position.x, position.y, sprite.pixel_size_x, sprite.pixel_size_y, true);
-
     }
 };
 

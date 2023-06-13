@@ -339,7 +339,7 @@ void UpdateRunnerGame()
         }
     }
 
-    DrawText(scoreText, scoreTextPosX, scoreTextPosY);
+    DrawMyText(scoreText, scoreTextPosX, scoreTextPosY);
 
     if (!gameOver)
     {

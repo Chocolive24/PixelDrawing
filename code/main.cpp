@@ -4,7 +4,7 @@
 #include <malloc.h>
 
 #include "AudioManager.cpp"
-#include "Button.cpp"
+#include "GUI.cpp"
 #include "Drawing.cpp"
 #include "Input.cpp"
 #include "LevelEditor.cpp"
@@ -86,14 +86,6 @@ void CreateTitleScreenButton(Rect rect, uint32_t color, uint32_t selectedColor, 
 
     Button button{rect, frame, color, selectedColor, text, false, activateEffect};
 
-    // Rect rect{xPos - width / 2, yPos - height / 2, width, height, color};
-
-    // rect.xPos -= rect.width / 2
-
-    // Button button{rect, color, selectedColor, text, false, actionFunc};
-
-    // Button button = CreateButton(rect, color, selectedColor, text, actionFunc);
-
     titleScreenButtons[titleScrButtonCount++] = button;
 }
 
@@ -101,8 +93,10 @@ void RunGame()
 {
     ClearTileButtons();
 
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tilePlayerWallSprite,   TILE_PLAYER_WALL, 10);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,     TILE_SPRING, 10);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tilePlayerWallSprite,   TILE_PLAYER_WALL, 4);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,     TILE_SPRING, 1);
+    // CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,     TILE_SPRING, 1);
+    // CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,     TILE_SPRING, 1);
 
     InitializeLevelEditor(true);
     LoadLevel();
@@ -112,8 +106,7 @@ void RunGame()
 
     gameStarted = true;
 
-    // SoundClip clip = loadSoundClip("assets/mainTheme.wav");
-    // PlaySoundClip(clip, 0.5f, 440, 0, 0, true);
+   
 }
 
 void RunLevelSelection()
@@ -126,10 +119,10 @@ void RunLevelEditor()
 {
     ClearTileButtons();
 
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_WALL, 10);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFireSprite,    TILE_FIRE, 10);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,   TILE_SPRING, 10);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFruitSprite,   TILE_FRUIT, 10);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_WALL, 8);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFireSprite,    TILE_FIRE, 5);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,   TILE_SPRING, 2);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFruitSprite,   TILE_FRUIT, 9);
 
     InitializeLevelEditor(false);
     ResetTilemap();
@@ -178,6 +171,14 @@ void Start()
     SetupSound();
 
     CreateTitleScreen();
+
+    if (!puzzleTheme.samples)
+    {
+        puzzleTheme = loadSoundClip("assets/puzzleTheme.wav");
+        PlaySoundClip(puzzleTheme, 1.f, 440, 0, 0, true);
+    }
+
+    InitializeGUI(player);
 }
 
 #pragma region Update Functions
@@ -249,6 +250,8 @@ void Update()
 
         HandleInputs();
 
+        UpdateGUI();
+
         if (gameStarted)
         {
             UpdateGame();
@@ -281,6 +284,15 @@ int main()
     Start();
 
     Update();
+
+    // free(window);
+    // FreeDrawingMemory();
+    // FreeSoundsMemory();
+    // free(puzzleTheme.samples);
+
+    
+
+    printf("FIN");
 
     return 0;
 }
