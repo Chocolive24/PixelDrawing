@@ -193,7 +193,7 @@ void SaveLevel()
 
     SerializeLevel(&serializer);
 
-    FILE* file = fopen("save.level", "wb");
+    FILE* file = fopen("assets//save.level", "wb");
     fwrite(serializer.buffer, serializer.bufferUsed, 1, file);
 
     fclose(file);
@@ -203,7 +203,7 @@ void LoadLevel()
 {
     LOG("Loading Level...");
 
-    Span fileData = loadEntireFile("save.level");
+    Span fileData = loadEntireFile("assets//save.level");
 
     Serializer serializer{};
     serializer.mode = SER_MODE_READ;
@@ -503,7 +503,6 @@ void UpdateLevelEditor()
         }
     }   
 
-    
     DrawTileButtons();
     
     DrawLevelTiles();

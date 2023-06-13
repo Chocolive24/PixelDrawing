@@ -120,9 +120,9 @@ void RunLevelEditor()
 {
     ClearTileButtons();
 
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,   TILE_WALL, 8);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,    TILE_WALL, 8);
     CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFireSprite,    TILE_FIRE, 5);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,   TILE_SPRING, 2);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,  TILE_SPRING, 2);
     CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFruitSprite,   TILE_FRUIT, 9);
 
     InitializeLevelEditor(false);
@@ -218,17 +218,17 @@ void Update()
 {
     do 
     {
-        #ifdef __EMSCRIPTEN__
-        nowTime = mfb_timer_now(timer);
-        deltaTime = nowTime - lastRenderedFrameTime;
-        targetDeltaTime = 1.f/60.f;
-        if (deltaTime < targetDeltaTime) {
-            // si on a pas depassé notre target delta time, on rend la main au browser puis on revient en haut de la boucle
-            mfb_wait_sync(window);
-            continue;
-        }
-        lastRenderedFrameTime = nowTime;
-        #endif
+        // #ifdef __EMSCRIPTEN__
+        // nowTime = mfb_timer_now(timer);
+        // deltaTime = nowTime - lastRenderedFrameTime;
+        // targetDeltaTime = 1.f/60.f;
+        // if (deltaTime < targetDeltaTime) {
+        //     // si on a pas depassé notre target delta time, on rend la main au browser puis on revient en haut de la boucle
+        //     mfb_wait_sync(window);
+        //     continue;
+        // }
+        // lastRenderedFrameTime = nowTime;
+        // #endif
 
         memcpy(previousKeyStates, keyStates, sizeof(keyStates));
         memcpy(previousMouseButtonStates, mouseButtonStates, sizeof(mouseButtonStates));
@@ -290,10 +290,6 @@ int main()
     // FreeDrawingMemory();
     // FreeSoundsMemory();
     // free(puzzleTheme.samples);
-
-    
-
-    printf("FIN");
 
     return 0;
 }

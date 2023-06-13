@@ -162,7 +162,8 @@ struct Player
                     continue;
                 }
 
-                DrawEmptyRect(x * TILE_PX, y * TILE_PX, 8, 8, RED, false);
+                // Debug colliding tiles.
+                //DrawEmptyRect(x * TILE_PX, y * TILE_PX, 8, 8, RED, false);
 
                 switch (tileType)
                 {
