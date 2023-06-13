@@ -53,6 +53,8 @@ void HandleInputs()
             gameStarted = false;
             levelSelectOpen = false;
             editorOpen = false;
+            isPlayerEditing = false;
+            player.started = false;
         }
         else 
         {
@@ -103,10 +105,9 @@ void RunGame()
     
     player.SelfReset();
     player.isEditingLvl = true;
+    isPlayerEditing = true;
 
     gameStarted = true;
-
-   
 }
 
 void RunLevelSelection()

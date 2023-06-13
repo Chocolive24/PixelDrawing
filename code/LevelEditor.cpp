@@ -79,7 +79,7 @@ int buttonPosX, buttonPosY;
 uint32_t cursorColor = WHITE;
 bool isEmplacementValid;
 
-bool isInGame = false;
+bool isInGame, isPlayerEditing;
 
 // ---------------------------------------------------------------
 
@@ -283,6 +283,7 @@ Vector2Int GetPositionInTilemap(int x, int y)
 void InitializeLevelEditor(bool isEditorInGame)
 {
     isInGame = isEditorInGame;
+
     // Commit a blank state for the tile map to undo the first paint.
     HistoryCommit();
 
@@ -296,7 +297,7 @@ void InitializeLevelEditor(bool isEditorInGame)
     SelectButton(&tileButtons[0]);
 }
 
-void DrawButtons()
+void DrawTileButtons()
 {
     for (int i = 0; i < tileButtonCount; i++)
     {
@@ -306,13 +307,13 @@ void DrawButtons()
 
         //DrawFullRect(t->xPos, t->yPos, TILE_PX, TILE_PX, t->color, false);
 
-        // if (isInGame)
-        // {
+        if (isInGame)
+        {
             //snprintf(t->tileNbrTxt.literalString, 10, "%i", t->tileNbr);
             sprintf(t->tileNbrTxt.literalString, "%i", t->tileNbr);
 
             DrawMyText(t->tileNbrTxt.literalString, t->tileNbrTxt.xPos, t->tileNbrTxt.yPos);
-        //}
+        }
 
         bool isMouseOverButton = mouseX >= t->xPos && mouseX < t->xPos + TILE_PX &&
                                  mouseY >= t->yPos && mouseY < t->yPos + TILE_PX;
@@ -403,6 +404,11 @@ void DrawLevelTiles()
                     }
                 }
                 
+                if (isInGame && !isPlayerEditing)
+                {
+                    continue;
+                }
+
                 if (MouseBeingPressed(MOUSE_LEFT) && isEmplacementValid)
                 {
                     tiles[y * TILEMAP_WIDTH_PX + x] = selectedButton->tileType;
@@ -497,8 +503,9 @@ void UpdateLevelEditor()
         }
     }   
 
-    DrawButtons();
-
+    
+    DrawTileButtons();
+    
     DrawLevelTiles();
 
     DrawEntities();

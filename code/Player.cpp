@@ -10,7 +10,7 @@
 struct Player
 {
     // Technical attributes
-    Vector2F startPos = Vector2F{12, 12};
+    Vector2F startPos = Vector2F{12, TILEMAP_HEIGHT - 12};
     Vector2F position = Vector2F{startPos.x, startPos.y};
     Vector2F velocity = Vector2F{0, 0};
     Vector2Int size   = Vector2Int{TILE_PX, TILE_PX};
@@ -20,6 +20,7 @@ struct Player
     bool isJumping, isGrounded;
     bool isEditingLvl = false;
     bool hasFinishTheLevel = false;
+    bool started;
 
     int topTile, rigthTile, bottomTile, leftTile;
     
@@ -52,6 +53,7 @@ struct Player
 
     void SelfReset()
     {
+        started = true;
         SetupJumpVariables();
         position.x = startPos.x;
         position.y = startPos.y;
@@ -155,12 +157,12 @@ struct Player
             {
                 int tileType = tiles[y * TILEMAP_WIDTH_PX + x];
 
-                DrawEmptyRect(x * TILE_PX, y * TILE_PX, 8, 8, RED, false);
-
                 if (!IsCollision(x, y))
                 {
                     continue;
                 }
+
+                DrawEmptyRect(x * TILE_PX, y * TILE_PX, 8, 8, RED, false);
 
                 switch (tileType)
                 {
@@ -169,18 +171,25 @@ struct Player
                         break;
                     case TILE_WALL:
                     case TILE_PLAYER_WALL:
-                        if (position.y < (y * TILE_PX))
-                        {
-                            isGrounded = true;
-                            
-                            return;
-                            printf("%f %i \n", position.y, (y * TILE_PX) + TILE_PX / 2);
-                        }
-                        printf("NOT LA FIIIINNNN");
-                        // if (IsCollision(x, y) && position.y > (y * TILE_PX))
+                        // if (position.y < (y * TILE_PX))
                         // {
-                        //     // Up Collision
+                        //     isGrounded = true;
+                            
+                        //     return;
+                        //     printf("%f %i \n", position.y, (y * TILE_PX) + TILE_PX / 2);
                         // }
+                        if (position.y > (y * TILE_PX))
+                        {
+                            velocity.y = 0.f;
+                        }
+
+                        if (std::abs(position.x - x + 4) <= 2 || std::abs(position.y - y + 4) <= 2)
+                        {
+                            position.x = position.x / TILE_PX * TILE_PX;
+                            position.y = position.y / TILE_PX * TILE_PX;
+                            printf("DEBUG \n");
+                        }
+
                         break;
                     case TILE_FIRE:
                         SelfReset();
@@ -196,7 +205,6 @@ struct Player
                     case TILE_SPRING:
                         if (position.y < (y * TILE_PX))
                         {
-                            printf("yo");
                             isJumping = true;
                             isGrounded = false;
                             velocity.y = -(initalJumpVelocity * 1.4f);
@@ -207,21 +215,24 @@ struct Player
                 }
             }
         }
-
-        printf("LA FIN\n");
     }
 
     bool IsGrounded()
     {
-        for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
+        for (int y = topTile; y <= bottomTile; y++)
         {
-            for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
+            for (int x = leftTile; x <= rigthTile; x++)
             {
                 int tileType = tiles[y * TILEMAP_WIDTH_PX + x];
 
+                if (!IsCollision(x, y))
+                {
+                    continue;
+                }
+
                 if (tileType == TILE_WALL || tileType == TILE_PLAYER_WALL)
                 {
-                    if (IsCollision(x, y) && position.y < (y * TILE_PX))
+                    if (position.y < (y * TILE_PX))
                     {
                         return true;
                     }
@@ -259,7 +270,6 @@ struct Player
                 position.x = ((int)position.x / TILE_PX * TILE_PX) + 4;
                 return;
             }
-
             if (velocity.x > -(moveSpeed))
             {
                 velocity.x -= (moveSpeed / 5);
@@ -286,17 +296,29 @@ struct Player
         }
     }
 
+    void OnPlayMode()
+    {
+        isEditingLvl = false;
+        isPlayerEditing = false;
+        SelfReset();
+    }
+    
+    void OnEditMode()
+    {
+        isEditingLvl = true;
+        SelfReset();
+    }
+
     void Update()
     {
         if (KeyWasPressed(KB_KEY_ENTER))
         {
-            isEditingLvl = false;
+            OnPlayMode();
         }
 
         if (KeyWasPressed(KB_KEY_R))
         {
-            isEditingLvl = true;
-            SelfReset();
+            OnEditMode();
         }
 
         if (!isEditingLvl)
@@ -307,49 +329,31 @@ struct Player
 
             GetCollidingTiles();
             CheckCollisions();
-            //printf("%i \n", isGrounded);
-
-            // if (!IsGrounded())
-            // {
-            //     velocity.y += isJumping ? jumpGravity * deltaTime : GRAVITY;
-            // }
-            // else
-            // {
-            //     printf("%f \n", velocity.x);
-            //     isJumping = false;
-            //     velocity.y = 0.f;
-            //     position.y = ((int)position.y / TILE_PX * TILE_PX) + 3;
-            // }
 
             if (!IsBottomCollision(TILE_WALL) && !IsBottomCollision(TILE_PLAYER_WALL))
             {
                 velocity.y += isJumping ? jumpGravity * deltaTime : GRAVITY;
             }
-            else if ((IsBottomCollision(TILE_WALL) || IsBottomCollision(TILE_PLAYER_WALL)) && !isGrounded && isJumping)
+            else 
             {
                 isJumping = false;
                 isGrounded = true;
                 velocity.y = 0.f;
                 position.y = ((int)position.y / TILE_PX * TILE_PX) + 4;
             }
-            else if (!isJumping)
-            {
-                isGrounded = true;
-                velocity.y = 0.f;
-                position.y = ((int)position.y / TILE_PX * TILE_PX) + 4;
-            }
+            // else if ((IsBottomCollision(TILE_WALL) || IsBottomCollision(TILE_PLAYER_WALL)) && !isGrounded && isJumping)
+            // {
+                
+            // }
+            // else if (!isJumping)
+            // {
+            //     isGrounded = true;
+            //     velocity.y = 0.f;
+            //     position.y = ((int)position.y / TILE_PX * TILE_PX) + 4;
+            // }
 
             HandleJump();
-
-            
-
-
-            //printf("gravity %f\n ", velocity.y * deltaTime);
         }
-       
-        
-
-        //DrawFullRect(position.x, position.y, TILE_PX, TILE_PX, GREEN ,true);
 
         DrawBitmap((unsigned char*)sprite.pixels, position.x, position.y, sprite.pixel_size_x, sprite.pixel_size_y, true);
     }

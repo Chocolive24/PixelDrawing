@@ -64,15 +64,15 @@ void CreateEditorButton(Rect rect, uint32_t color, uint32_t selectedColor, Text 
     editorButtons[editorButtonCount++] = button;
 }
 
-void RunPlayMod()
+void RunPlayMode()
 {
-    playerRef->isEditingLvl = false;
-    playerRef->SelfReset();
+    playerRef->OnPlayMode();
 }
 
-void RunEditMod()
+void RunEditMode()
 {
     playerRef->isEditingLvl = true;
+    isPlayerEditing = true;
     playerRef->SelfReset();
 }
 
@@ -81,17 +81,17 @@ void InitEditorButtons()
     Rect playEditorRectB{ 180, 95, 30, 13, BLUE };
     Text playEditorTextB{ "play", 180, 95, WHITE };
 
-    CreateEditorButton(playEditorRectB, BLUE, LIGHT_BLUE, playEditorTextB, &RunPlayMod);
+    CreateEditorButton(playEditorRectB, BLUE, LIGHT_BLUE, playEditorTextB, &RunPlayMode);
 
     Rect editEditorRectB{ 180, 110, 30, 13, BLUE };
     Text editEditorTextB{ "edit", 180, 110, WHITE };
 
-    CreateEditorButton(editEditorRectB, BLUE, LIGHT_BLUE, editEditorTextB, &RunEditMod);
+    CreateEditorButton(editEditorRectB, BLUE, LIGHT_BLUE, editEditorTextB, &RunEditMode);
 }
 
 void UpdateEditorButtons()
 {
-    if (playerRef->isEditingLvl)
+    if (playerRef->started)
     {
         for (int i = 0; i < editorButtonCount; i++)
         {
