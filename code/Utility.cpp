@@ -87,6 +87,13 @@ float GetRandomFloat(float min, float max)
     return randomFloat;
 }
 
+
+char* Format()
+{
+
+}
+
+
 void windows_enable_colors_in_command_prompt()
 {
     #ifndef __EMSCRIPTEN__

@@ -43,6 +43,11 @@ struct Button
 Button editorButtons[2];
 int editorButtonCount;
 
+Button titleScreenButtons[3];
+int  titleScrButtonCount = 0;
+
+bool gameStarted, levelSelectOpen ,editorOpen;
+
 Player* playerRef = nullptr;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -89,6 +94,97 @@ void InitEditorButtons()
     CreateEditorButton(editEditorRectB, BLUE, LIGHT_BLUE, editEditorTextB, &RunEditMode);
 }
 
+
+
+void RunGame()
+{
+    ClearTileButtons();
+
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tilePlayerWallSprite, TILE_PLAYER_WALL, 8);
+
+    InitializeLevelEditor(true);
+    LoadLevel("assets//save1.level");
+    currentLvl = 1;
+    
+    playerRef->SelfReset();
+    playerRef->isEditingLvl = true;
+    isPlayerEditing = true;
+
+    gameStarted = true;
+}
+
+void RunLevelSelection()
+{
+    levelSelectOpen = true;
+    LOG("LEVEL SELECTION");
+}
+
+void RunLevelEditor()
+{
+    ClearTileButtons();
+
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,    TILE_WALL, 8);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFireSprite,    TILE_FIRE, 5);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,  TILE_SPRING, 2);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFruitSprite,   TILE_FRUIT, 9);
+    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tilePlayer,        TILE_PLAYER_SPAWN, 1);
+
+    InitializeLevelEditor(false);
+    ResetTilemap();
+    editorOpen = true;
+}
+
+void CreateTitleScreenButton(int row, char* litteralString, void (*activateEffect)())
+{
+    if (titleScrButtonCount >= 3)
+    {
+        return;
+    }
+
+    Rect rect{ ((int)(FRAME_BUFFER_WIDTH / 2)), row * ((int)(FRAME_BUFFER_HEIGHT / 4)), 100, 20, BLUE };
+
+    Text text{ litteralString, ((int)(FRAME_BUFFER_WIDTH / 2)), row * ((int)(FRAME_BUFFER_HEIGHT / 4)), WHITE };
+
+    Rect frame {rect.xPos, rect.yPos, rect.width, rect.height, WHITE};
+
+    Button button{rect, frame, BLUE, LIGHT_BLUE, text, false, activateEffect};
+
+    titleScreenButtons[titleScrButtonCount++] = button;
+}
+
+void CreateTitleScreen()
+{
+    CreateTitleScreenButton(1.5, "start game",   &RunGame);
+
+    //CreateTitleScreenButton(2, "select level", &RunLevelSelection);
+
+    CreateTitleScreenButton(3, "level editor", &RunLevelEditor);
+}
+
+
+
+void InitializeGUI(Player& p)
+{
+    playerRef = &p;
+
+    InitEditorButtons();
+}
+
+void UpdateTitleScreen()
+{
+    for (int i = 0; i < titleScrButtonCount; i++)
+    {
+        Button* b = &titleScreenButtons[i];
+
+        b->Update();
+
+        if (b->isSelected && MouseWasPressed(MOUSE_LEFT))
+        {
+            b->activateEffect();
+        }
+    }
+}
+
 void UpdateEditorButtons()
 {
     if (playerRef->started)
@@ -107,12 +203,7 @@ void UpdateEditorButtons()
     }
 }
 
-void InitializeGUI(Player& p)
-{
-    playerRef = &p;
 
-    InitEditorButtons();
-}
 
 void UpdateGUI()
 {

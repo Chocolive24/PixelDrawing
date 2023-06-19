@@ -29,6 +29,7 @@ enum TileType
     TILE_FIRE,
     TILE_SPRING,
     TILE_FRUIT,
+    TILE_PLAYER_SPAWN,
     TILE_COUNT
 };
 
@@ -72,6 +73,7 @@ bitmap_t tilePlayerWallSprite = LoadImage("assets/tileOrangeWall.png");
 bitmap_t tileFireSprite = LoadImage("assets/tileFire.png");
 bitmap_t tileSpringSprite = LoadImage("assets/tileSpring.png");
 bitmap_t tileFruitSprite = LoadImage("assets/tileFruit.png");
+bitmap_t tilePlayer = LoadImage("assets/bopy.png");
 
 TileButton* selectedButton = nullptr;
 
@@ -93,6 +95,8 @@ bool tilesModified = false; // For Undo system.
 
 Entity entities[100];
 int entityCount = 0;
+
+
 
 // ---------------------------------------------------------------
 
@@ -193,17 +197,17 @@ void SaveLevel()
 
     SerializeLevel(&serializer);
 
-    FILE* file = fopen("assets//save.level", "wb");
+    FILE* file = fopen("assets//save6.level", "wb");
     fwrite(serializer.buffer, serializer.bufferUsed, 1, file);
 
     fclose(file);
 }
 
-void LoadLevel()
+void LoadLevel(const char* filePath)
 {
     LOG("Loading Level...");
 
-    Span fileData = loadEntireFile("assets//save.level");
+    Span fileData = loadEntireFile(filePath);
 
     Serializer serializer{};
     serializer.mode = SER_MODE_READ;
@@ -243,7 +247,7 @@ void CreateTileButton(int xPos, int yPos, bitmap_t sprite, TileType tileType, in
         return;
     }
 
-    char literalString[4];
+    char literalString[2];
     Text text {literalString, xPos +  2 * TILE_PX, yPos + 2, WHITE };
 
     TileButton t { xPos, yPos, sprite, false, tileType, tileNbr, text };
@@ -272,11 +276,19 @@ void ClearTileButtons()
 
 int GetTileAtPosition(int x, int y)
 {
-    return tiles[y * TILEMAP_WIDTH_PX + x];
+    if (x > TILEMAP_WIDTH)  x = TILEMAP_WIDTH;
+    
+    if (y > TILEMAP_HEIGHT) y = TILEMAP_HEIGHT;
+
+    return tiles[(y / TILE_PX) * TILEMAP_WIDTH_PX + (x / TILE_PX)];
 }
 
 Vector2Int GetPositionInTilemap(int x, int y)
 {
+    if (x > TILEMAP_WIDTH)  x = TILEMAP_WIDTH;
+    
+    if (y > TILEMAP_HEIGHT) y = TILEMAP_HEIGHT;
+
     return Vector2Int{x / TILE_PX * TILE_PX, y / TILE_PX * TILE_PX };
 }
 
@@ -310,7 +322,7 @@ void DrawTileButtons()
         if (isInGame)
         {
             //snprintf(t->tileNbrTxt.literalString, 10, "%i", t->tileNbr);
-            sprintf(t->tileNbrTxt.literalString, "%i", t->tileNbr);
+            snprintf(t->tileNbrTxt.literalString, 10, "%i", t->tileNbr);
 
             DrawMyText(t->tileNbrTxt.literalString, t->tileNbrTxt.xPos, t->tileNbrTxt.yPos);
         }
@@ -370,6 +382,11 @@ void DrawLevelTiles()
                  DrawBitmap((unsigned char*)tileFruitSprite.pixels, x * TILE_PX, y * TILE_PX, 
                             tileFruitSprite.pixel_size_x, tileFruitSprite.pixel_size_y, false);
             }
+            else if (tile_type == TILE_PLAYER_SPAWN && !isInGame)
+            {
+                 DrawBitmap((unsigned char*)tilePlayer.pixels, x * TILE_PX, y * TILE_PX, 
+                            tilePlayer.pixel_size_x, tilePlayer.pixel_size_y, false);
+            }
             else 
             {
                 DrawFullRect(x * TILE_PX, y * TILE_PX, TILE_PX, TILE_PX, LIGHT_BLUE, false);
@@ -411,10 +428,15 @@ void DrawLevelTiles()
 
                 if (MouseBeingPressed(MOUSE_LEFT) && isEmplacementValid)
                 {
+                    if (selectedButton->tileType == TILE_PLAYER_SPAWN && selectedButton->tileNbr <= 0)
+                    {
+                        continue;
+                    }
+
                     tiles[y * TILEMAP_WIDTH_PX + x] = selectedButton->tileType;
                     tilesModified = true;
 
-                    if (isInGame)
+                    if (isInGame || selectedButton->tileType == TILE_PLAYER_SPAWN)
                     {
                         selectedButton->tileNbr--;
                     }
@@ -423,6 +445,17 @@ void DrawLevelTiles()
                 if (MouseBeingPressed(MOUSE_RIGHT))
                 {
                     int currentTileType = tiles[y * TILEMAP_WIDTH_PX + x];
+
+                    if (currentTileType == TILE_PLAYER_SPAWN)
+                    {
+                        for (int i = 0; i < tileButtonCount; i++)
+                        {
+                            if (tileButtons[i].tileType == tiles[y * TILEMAP_WIDTH_PX + x] )
+                            {
+                                tileButtons[i].tileNbr++;
+                            }
+                        }
+                    }
 
                     if (currentTileType != TILE_EMPTY)
                     {
@@ -489,7 +522,7 @@ void UpdateLevelEditor()
 
         if (KeyWasPressed(KB_KEY_L))
         {
-            LoadLevel();
+            LoadLevel("assets//save5.level");
         }
 
         if ((KeyBeingPressed(KB_KEY_LEFT_CONTROL) || KeyBeingPressed(KB_KEY_LEFT_SUPER)) && KeyWasPressed(KB_KEY_Y)) // Z

@@ -94,7 +94,12 @@
         "__verbose_abort": "cpp",
         "string_view": "cpp",
         "future": "cpp",
-        "button": "cpp"
+        "button": "cpp",
+        "deque": "cpp",
+        "queue": "cpp",
+        "regex": "cpp",
+        "stack": "cpp",
+        "valarray": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

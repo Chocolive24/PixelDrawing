@@ -13,7 +13,8 @@ bool previousKeyStates[KB_KEY_LAST + 1];
 bool mouseButtonStates[MOUSE_BTN_7 + 1];
 bool previousMouseButtonStates[MOUSE_BTN_7 + 1];
 
-int mouseX, mouseY;
+int mouseX, mouseY, mousePressedX, mousePressedY;
+
 
 // Functions 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -64,6 +65,9 @@ bool MouseBeingPressed(mfb_mouse_button button)
 
 bool MouseWasPressed(mfb_mouse_button button)
 {
+    mousePressedX = mouseX;
+    mousePressedY = mouseY;
+
     return previousMouseButtonStates[button] && !mouseButtonStates[button];
 }
 
@@ -76,8 +80,8 @@ bool IsMouseOverButton(int buttonX, int buttonY, int buttonW, int buttonH)
 
 void InitializeInputCallbacks(mfb_window* window)
 {
-    mfb_set_keyboard_callback(window, OnKeyboardEvent);
-    mfb_set_mouse_move_callback(window, OnMouseMove);
+    mfb_set_keyboard_callback    (window, OnKeyboardEvent);
+    mfb_set_mouse_move_callback  (window, OnMouseMove);
     mfb_set_mouse_button_callback(window, OnMouseButtonEvent);
 }
 

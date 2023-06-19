@@ -6,7 +6,9 @@
 #include "AudioManager.cpp"
 #include "GUI.cpp"
 #include "Drawing.cpp"
+#include "FrameAllocator.cpp"
 #include "Input.cpp"
+#include "GameLevels.cpp"
 #include "LevelEditor.cpp"
 #include "Player.cpp"
 #include "Utility.cpp"
@@ -21,13 +23,8 @@ struct mfb_window *window;
 
 uint32_t fps = 60;
 
-bool gameStarted, levelSelectOpen ,editorOpen;
-
 // Title screen variables 
 // ---------------------------------------------------------------
-
-Button titleScreenButtons[3];
-int  titleScrButtonCount = 0;
 
 Player player{ };
 
@@ -41,10 +38,10 @@ void HandleInputs()
     // On Key Pressed Events.
     // ------------------------------------------------------
 
-    if (KeyWasPressed(KB_KEY_SPACE))
-    {
-        editorOpen = true;
-    }
+    // if (KeyWasPressed(KB_KEY_SPACE))
+    // {
+    //     editorOpen = true;
+    // }
     
     if (KeyWasPressed(KB_KEY_ESCAPE))
     {
@@ -77,76 +74,11 @@ void HandleInputs()
 
 #pragma endregion Input Functions
 
-void CreateTitleScreenButton(Rect rect, uint32_t color, uint32_t selectedColor, Text text, void (*activateEffect)())
-{
-    if (titleScrButtonCount >= 3)
-    {
-        return;
-    }
 
-    Rect frame {rect.xPos, rect.yPos, rect.width, rect.height, WHITE};
 
-    Button button{rect, frame, color, selectedColor, text, false, activateEffect};
 
-    titleScreenButtons[titleScrButtonCount++] = button;
-}
 
-void RunGame()
-{
-    ClearTileButtons();
 
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tilePlayerWallSprite,   TILE_PLAYER_WALL, 4);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,     TILE_SPRING, 1);
-    // CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,     TILE_SPRING, 1);
-    // CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,     TILE_SPRING, 1);
-
-    InitializeLevelEditor(true);
-    LoadLevel();
-    
-    player.SelfReset();
-    player.isEditingLvl = true;
-    isPlayerEditing = true;
-
-    gameStarted = true;
-}
-
-void RunLevelSelection()
-{
-    levelSelectOpen = true;
-    LOG("LEVEL SELECTION");
-}
-
-void RunLevelEditor()
-{
-    ClearTileButtons();
-
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileWallSprite,    TILE_WALL, 8);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFireSprite,    TILE_FIRE, 5);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileSpringSprite,  TILE_SPRING, 2);
-    CreateTileButton(buttonPosX, buttonPosY += (2 * TILE_PX), tileFruitSprite,   TILE_FRUIT, 9);
-
-    InitializeLevelEditor(false);
-    ResetTilemap();
-    editorOpen = true;
-}
-
-void CreateTitleScreen()
-{
-    Rect gameRectB{ ((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)), 100, 20, BLUE };
-    Text gameTextB{ "start game", ((int)(FRAME_BUFFER_WIDTH / 2)), ((int)(FRAME_BUFFER_HEIGHT / 4)), WHITE };
-
-    CreateTitleScreenButton(gameRectB, BLUE, LIGHT_BLUE, gameTextB, &RunGame);
-
-    Rect lvlSltRecB{ ((int)(FRAME_BUFFER_WIDTH / 2)), 2 * ((int)(FRAME_BUFFER_HEIGHT / 4)), 100, 20, BLUE };
-    Text lvlSltTextB{ "select level", ((int)(FRAME_BUFFER_WIDTH / 2)), 2 * ((int)(FRAME_BUFFER_HEIGHT / 4)), WHITE };
-
-    CreateTitleScreenButton(lvlSltRecB, BLUE, LIGHT_BLUE, lvlSltTextB, &RunLevelSelection);
-
-    Rect editorRectB{ ((int)(FRAME_BUFFER_WIDTH / 2)), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)), 100, 20, BLUE };
-    Text editorTextB{ "level editor", ((int)(FRAME_BUFFER_WIDTH / 2)), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)), WHITE };
-
-    CreateTitleScreenButton(editorRectB, BLUE, LIGHT_BLUE, editorTextB, &RunLevelEditor);
-}
 
 void Start()
 {
@@ -171,6 +103,8 @@ void Start()
 
     SetupSound();
 
+    FrameAllocatorInit(10000);
+
     CreateTitleScreen();
 
     if (!puzzleTheme.samples)
@@ -185,23 +119,19 @@ void Start()
 #pragma region Update Functions
 
 
-void UpdateTitleScreen()
-{
-    for (int i = 0; i < titleScrButtonCount; i++)
-    {
-        Button* b = &titleScreenButtons[i];
-
-        b->Update();
-
-        if (b->isSelected && MouseWasPressed(MOUSE_LEFT))
-        {
-            b->activateEffect();
-        }
-    }
-}
-
 void UpdateGame()
 {
+    if (!player.started)
+    {
+        gameStarted = false;
+        levelSelectOpen = false;
+        editorOpen = false;
+        isPlayerEditing = false;
+        player.started = false;
+
+        return;
+    }
+
     if (player.isEditingLvl)
     {
         UpdateLevelEditor();
@@ -216,6 +146,14 @@ void UpdateGame()
 
 void Update()
 {
+    // int score = 100;
+    // char* scoreText = (char*)FrameAlloc(sizeof(char) * 10);
+
+    // int s2 = 200;
+    // char* scoreText2 = (char*)FrameAlloc(sizeof(char) * 20);
+
+    // int* intTest = (int*)FrameAlloc(sizeof(int));
+    // *intTest = 10;
     do 
     {
         // #ifdef __EMSCRIPTEN__
@@ -229,6 +167,21 @@ void Update()
         // }
         // lastRenderedFrameTime = nowTime;
         // #endif
+
+        // snprintf(scoreText,  sizeof(char) * 10, "%i", score);
+        // snprintf(scoreText2, sizeof(char) * 20, "%i", s2);
+        // *intTest += 1;
+
+        // printf("%c", frameAllocatorBuffer[0]);
+        // printf("%c", frameAllocatorBuffer[1]);
+        // printf("%c ", frameAllocatorBuffer[2]);
+
+        // printf("%c", frameAllocatorBuffer[10]);
+        // printf("%c", frameAllocatorBuffer[11]);
+        // printf("%c\n", frameAllocatorBuffer[12]);
+
+        // DrawMyText(scoreText, 10, 10);
+        // DrawMyText(scoreText2, 10, 20);
 
         memcpy(previousKeyStates, keyStates, sizeof(keyStates));
         memcpy(previousMouseButtonStates, mouseButtonStates, sizeof(mouseButtonStates));
@@ -247,6 +200,17 @@ void Update()
         memset(windowBuffer, 0, WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(uint32_t));
         memset(frameBuffer,  0, FRAME_BUFFER_WIDTH * FRAME_BUFFER_HEIGHT * sizeof(uint32_t));
 
+        if (gameStarted || editorOpen)
+        {
+            for (int y = 0; y < TILEMAP_HEIGHT; y++)
+            {
+                for (int x = 0; x < TILEMAP_WIDTH ; x++)
+                {
+                    DrawPixel(x, y, LIGHT_BLUE);
+                }
+            }
+        }
+
         TimerTick();
 
         HandleInputs();
@@ -257,10 +221,10 @@ void Update()
         {
             UpdateGame();
         }
-        else if (levelSelectOpen)
-        {
-            //UpdateLevelSelection()
-        }
+        // else if (levelSelectOpen)
+        // {
+        //     UpdateLevelSelection();
+        // }
         else if (editorOpen)
         {
             UpdateLevelEditor();
@@ -269,6 +233,8 @@ void Update()
         {
             UpdateTitleScreen();
         }
+
+        FrameAllocatorTick();
 
     } while(mfb_wait_sync(window));
 }

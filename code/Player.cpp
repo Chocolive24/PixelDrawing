@@ -3,6 +3,7 @@
 #include "AudioManager.cpp"
 #include "Drawing.cpp"
 #include "Input.cpp"
+#include "GameLevels.cpp"
 #include "LevelEditor.cpp"
 #include "Math.cpp"
 #include "Timer.cpp"
@@ -21,6 +22,11 @@ struct Player
     bool isEditingLvl = false;
     bool hasFinishTheLevel = false;
     bool started;
+    double endLevelTime = 0.0;
+
+    int maxTopPos, maxRightPos, maxLeftPos, maxBottomPos;
+
+    Vector2Int currentTilePos{0, 0};
 
     int topTile, rigthTile, bottomTile, leftTile;
     
@@ -55,6 +61,21 @@ struct Player
     {
         started = true;
         SetupJumpVariables();
+
+        for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
+        {
+            for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
+            {
+                int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
+
+                if (tile_type == TILE_PLAYER_SPAWN)
+                {
+                    startPos.x = x * TILE_PX + 4;
+                    startPos.y = y * TILE_PX + 4;
+                }
+
+            }
+        }
         position.x = startPos.x;
         position.y = startPos.y;
         velocity = Vector2F{0, 0};
@@ -80,16 +101,17 @@ struct Player
 
     bool IsRightCollision()
     {
-        for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
+        for (int y = topTile; y <= bottomTile; y++)
         {
-            for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
+            for (int x = leftTile; x <= rigthTile; x++)
             {
                 int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
 
-                if (position.x - (size.x / 2) <  (x * TILE_PX) + TILE_PX &&
-                    position.x + (size.x / 2) > (x * TILE_PX) &&
-                    position.y - (size.y / 2) <  (y * TILE_PX) + TILE_PX &&
-                    position.y + (size.y / 2) >  (y * TILE_PX) && tile_type == TILE_WALL)
+                if (position.x - (size.x / 2) - velocity.x < (x * TILE_PX) + TILE_PX &&
+                    position.x + (size.x / 2) + velocity.x > (x * TILE_PX)           &&
+                    position.y - (size.y / 2)              < (y * TILE_PX) + TILE_PX &&
+                    position.y + (size.y / 2)              > (y * TILE_PX)           && 
+                    tile_type != TILE_EMPTY)
                 {
                     return true;
                 }
@@ -101,17 +123,18 @@ struct Player
 
     bool IsLeftCollision()
     {
-        for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
+        for (int y = topTile; y <= bottomTile; y++)
         {
-            for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
+            for (int x = leftTile; x <= rigthTile; x++)
             {
                 int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
 
-                if (position.x - (size.x / 2) <  (x * TILE_PX) + TILE_PX &&
-                    position.x + (size.x / 2) > (x * TILE_PX) &&
-                    position.y - (size.y / 2) <  (y * TILE_PX) + TILE_PX &&
-                    position.y + (size.y / 2) >  (y * TILE_PX) && tile_type != TILE_EMPTY)
+                if (position.x - (size.x / 2) - velocity.x < (x * TILE_PX) + TILE_PX &&
+                    position.x + (size.x / 2) + velocity.x > (x * TILE_PX) &&
+                    position.y - (size.y / 2) < (y * TILE_PX) + TILE_PX &&
+                    position.y + (size.y / 2) > (y * TILE_PX) && tile_type != TILE_EMPTY)
                 {
+                    printf("%f %i \n ", position.x - (size.x / 2) - velocity.x, (x * TILE_PX) + TILE_PX);
                     return true;
                 }
             }
@@ -122,9 +145,9 @@ struct Player
 
     bool IsBottomCollision(TileType type)
     {
-        for (int y = 0; y < TILEMAP_HEIGHT_PX; y++)
+        for (int y = topTile; y <= bottomTile; y++)
         {
-            for (int x = 0; x < TILEMAP_WIDTH_PX; x++)
+            for (int x = leftTile; x <= rigthTile; x++)
             {
                 int tile_type = tiles[y * TILEMAP_WIDTH_PX + x];
 
@@ -143,14 +166,16 @@ struct Player
 
     bool IsCollision(int x, int y)
     {
-        return  position.x - (size.x / 2) <   (x * TILE_PX) + TILE_PX &&
-                position.x + (size.x / 2) >   (x * TILE_PX) &&
-                position.y - (size.y / 2) <   (y * TILE_PX) + TILE_PX &&
-                position.y + (size.y / 2) >   (y * TILE_PX);
+        return  position.x - (size.x / 2) < (x * TILE_PX) + TILE_PX &&
+                position.x + (size.x / 2) > (x * TILE_PX)           &&
+                position.y - (size.y / 2) < (y * TILE_PX) + TILE_PX &&
+                position.y + (size.y / 2) > (y * TILE_PX);
     }
 
     void CheckCollisions()
     {
+        isGrounded = false;
+
         for (int y = topTile; y <= bottomTile; y++)
         {
             for (int x = leftTile; x <= rigthTile; x++)
@@ -172,36 +197,53 @@ struct Player
                         break;
                     case TILE_WALL:
                     case TILE_PLAYER_WALL:
-                        // if (position.y < (y * TILE_PX))
-                        // {
-                        //     isGrounded = true;
-                            
-                        //     return;
-                        //     printf("%f %i \n", position.y, (y * TILE_PX) + TILE_PX / 2);
-                        // }
+                        if (position.y < (y * TILE_PX))
+                        {
+                            isGrounded = true;
+                        }
                         if (position.y > (y * TILE_PX))
                         {
                             velocity.y = 0.f;
                         }
-
-                        if (std::abs(position.x - x + 4) <= 2 || std::abs(position.y - y + 4) <= 2)
-                        {
-                            position.x = position.x / TILE_PX * TILE_PX;
-                            position.y = position.y / TILE_PX * TILE_PX;
-                            printf("DEBUG \n");
-                        }
-
                         break;
                     case TILE_FIRE:
+                        printf("%f %i \n", position.x + size.x / 2, x * TILE_PX);
                         SelfReset();
                         break;
                     case TILE_FRUIT:
                         //hasFinishTheLevel = true;
+                        endLevelTime += deltaTime;
+
                         if (!winTheme.samples)
                         {
                             winTheme = loadSoundClip("assets/winTheme.wav");
-                            PlaySoundClip(winTheme, 1.f, 440, 0, 0, false);
                         }
+                        if (!hasFinishTheLevel)
+                        {
+                            PlaySoundClip(winTheme, 1.f, 440, 0, 0, false);
+                            hasFinishTheLevel = true;
+                        }
+
+                        if (endLevelTime >= 1.75)
+                        {
+                            if (currentLvl >= 5)
+                            {
+                                started = false;
+                            }
+                            else 
+                            {
+                                RunNextLevel();
+                                SelfReset();
+                                isEditingLvl = true;
+                                isPlayerEditing = true;
+                                endLevelTime = 0.0;
+                            }
+                        }
+                        else 
+                        {
+                            velocity = Vector2F{0, 0};
+                        }
+                        
                         break;
                     case TILE_SPRING:
                         if (position.y < (y * TILE_PX))
@@ -248,37 +290,57 @@ struct Player
     {
         if (KeyBeingPressed(KB_KEY_D))
         {
-            if (IsRightCollision())
+            // if (IsRightCollision())
+            // {
+            //     velocity.x = 0;
+            //     position.x = ((int)position.x / TILE_PX * TILE_PX) + 4;
+            //     return;
+            // }
+
+            if (position.x < maxRightPos)
             {
-                velocity.x = 0;
-                position.x = ((int)position.x / TILE_PX * TILE_PX) + 4;
-                return;
-            }
-            if (velocity.x < moveSpeed)
-            {
-                velocity.x +=  (moveSpeed / 5);
+                if (velocity.x < moveSpeed)
+                {
+                    velocity.x += (moveSpeed / 5);
+                }
+                else 
+                {
+                    velocity.x = moveSpeed;
+                }
             }
             else 
             {
-                velocity.x = moveSpeed;
+                position.x = maxRightPos;
+                velocity.x = 0;
             }
+            
         }   
         else if (KeyBeingPressed(KB_KEY_A))
         {
-            if (IsLeftCollision())
+            // if (IsLeftCollision())
+            // {
+            //     velocity.x = 0;
+            //     position.x = ((int)position.x / TILE_PX * TILE_PX) + 4;
+            //     return;
+            // }
+
+            if (position.x > maxLeftPos)
             {
-                velocity.x = 0;
-                position.x = ((int)position.x / TILE_PX * TILE_PX) + 4;
-                return;
-            }
-            if (velocity.x > -(moveSpeed))
-            {
-                velocity.x -= (moveSpeed / 5);
+                if (velocity.x > -(moveSpeed))
+                {
+                    velocity.x -= (moveSpeed / 5);
+                }
+                else 
+                {
+                    velocity.x = -(moveSpeed);
+                }
             }
             else 
             {
-                velocity.x = -(moveSpeed);
+                position.x = maxLeftPos;
+                velocity.x = 0;
             }
+            
         } 
         else 
         {
@@ -324,16 +386,67 @@ struct Player
 
         if (!isEditingLvl)
         {   
-            position += velocity * deltaTime;
+            if (!hasFinishTheLevel)
+            {
+                position += velocity * deltaTime;
+            }
+            
+
+            currentTilePos.x = (int)position.x / TILE_PX * TILE_PX;
+            currentTilePos.y = (int)position.y / TILE_PX * TILE_PX;
+
+            int nextTopTile    = GetTileAtPosition(currentTilePos.x,     currentTilePos.y - 8);
+            int nextRightTile  = GetTileAtPosition(currentTilePos.x + 8, currentTilePos.y);
+            int nextLeftTile   = GetTileAtPosition(currentTilePos.x - 8, currentTilePos.y);
+            int nextBottomTile = GetTileAtPosition(currentTilePos.x,     currentTilePos.y + 8);
+
+            maxTopPos   = 0 + TILE_PX / 2;
+            maxRightPos = TILEMAP_WIDTH   - TILE_PX / 2;
+            maxLeftPos  = 0 + TILE_PX / 2;
+            maxBottomPos = TILEMAP_HEIGHT - TILE_PX - 4;
+
+            if (nextTopTile == TILE_WALL || nextTopTile == TILE_PLAYER_WALL)
+            {
+                maxTopPos = currentTilePos.y - size.y / 2;
+            }
+
+            if (nextRightTile == TILE_WALL || nextRightTile == TILE_PLAYER_WALL || nextRightTile == TILE_SPRING)
+            {
+                maxRightPos = currentTilePos.x + size.x / 2;
+            }
+
+            if (nextLeftTile == TILE_WALL || nextLeftTile == TILE_PLAYER_WALL || nextLeftTile == TILE_SPRING)
+            {
+                maxLeftPos = 8 + currentTilePos.x - size.x / 2;
+            }
+
+            if (nextBottomTile == TILE_WALL || nextBottomTile == TILE_PLAYER_WALL)
+            {
+                //LOG("WALLLLL\n");
+                maxBottomPos = 8 + currentTilePos.y - size.y / 2;
+            }
+
+            
+
+            //printf("%i %f\n", maxBottomPos, position.y);
 
             HandleMove();
 
             GetCollidingTiles();
             CheckCollisions();
 
-            if (!IsBottomCollision(TILE_WALL) && !IsBottomCollision(TILE_PLAYER_WALL))
+            
+            // DrawEmptyRect(currentTilePos.x, currentTilePos.y, 8, 8, RED, false);
+
+            // DrawEmptyRect(currentTilePos.x, currentTilePos.y - 8, 8, 8, DARK_RED, false);
+            // DrawEmptyRect(currentTilePos.x + 8, currentTilePos.y, 8, 8, DARK_RED, false);
+            // DrawEmptyRect(currentTilePos.x - 8, currentTilePos.y, 8, 8, DARK_RED, false);
+            // DrawEmptyRect(currentTilePos.x, currentTilePos.y + 8, 8, 8, DARK_RED, false);
+
+            if (!IsBottomCollision(TILE_WALL) && !IsBottomCollision(TILE_PLAYER_WALL)) 
             {
                 velocity.y += isJumping ? jumpGravity * deltaTime : GRAVITY;
+                isGrounded = false;
             }
             else 
             {
