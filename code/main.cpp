@@ -14,6 +14,8 @@
 #include "Utility.cpp"
 #include "Timer.cpp"
 
+#include "microui.h"
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Variables 
@@ -146,7 +148,7 @@ void UpdateGame()
 
 void Update()
 {
-    // int score = 100;
+    int score = 100;
     // char* scoreText = (char*)FrameAlloc(sizeof(char) * 10);
 
     // int s2 = 200;
@@ -154,6 +156,7 @@ void Update()
 
     // int* intTest = (int*)FrameAlloc(sizeof(int));
     // *intTest = 10;
+
     do 
     {
         // #ifdef __EMSCRIPTEN__
@@ -182,6 +185,10 @@ void Update()
 
         // DrawMyText(scoreText, 10, 10);
         // DrawMyText(scoreText2, 10, 20);
+
+        DrawMyText(Format("score : %i", score), 50, 50);
+
+        LOG_FORMAT("Score : %i and a string :%s", score++, "I'm string");  
 
         memcpy(previousKeyStates, keyStates, sizeof(keyStates));
         memcpy(previousMouseButtonStates, mouseButtonStates, sizeof(mouseButtonStates));
@@ -235,7 +242,7 @@ void Update()
         }
 
         FrameAllocatorTick();
-
+        
     } while(mfb_wait_sync(window));
 }
 
