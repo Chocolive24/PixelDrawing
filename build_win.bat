@@ -1,5 +1,5 @@
 mkdir bin
-clang++ code/main.cpp code/microui.c ^
+clang++ code/PuzzleGame.cpp  ^
     -o bin/game.exe ^
     -std=c++20 ^
     -Wall -Wextra  ^

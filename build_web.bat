@@ -2,7 +2,7 @@ call C:\Users\olivi\source\repos\Tools\emsdk\emsdk_env.bat
 
 mkdir bin
 
-call C:\Users\olivi\source\repos\Tools\emsdk\upstream\emscripten\em++ code\main.cpp ^
+call C:\Users\olivi\source\repos\Tools\emsdk\upstream\emscripten\em++ code\RunnerGame.cpp ^
     -o bin\game.js ^
     -std=c++20 ^
     -Wall -Wextra ^
@@ -23,4 +23,4 @@ call C:\Users\olivi\source\repos\Tools\emsdk\upstream\emscripten\em++ code\main.
     -sEXPORTED_FUNCTIONS=["_malloc","_free","_main"] ^
     -sEXPORTED_RUNTIME_METHODS=ccall,cwrap ^
     -sASYNCIFY ^
-    --no-entry ^
+    --no-entry 

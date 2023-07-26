@@ -218,13 +218,13 @@ void Start()
 
 void UpdateTitleScreen()
 {
-    DrawFullRect (((int)(FRAME_BUFFER_WIDTH / 2) - 45), ((int)(FRAME_BUFFER_HEIGHT / 4) - 14) + 4, 90, 28, BLACK);
-    DrawEmptyRect(((int)(FRAME_BUFFER_WIDTH / 2) - 45), ((int)(FRAME_BUFFER_HEIGHT / 4) - 14) + 4, 90, 28, WHITE);
+    DrawFullRect (((int)(FRAME_BUFFER_WIDTH / 2) - 45), ((int)(FRAME_BUFFER_HEIGHT / 4) - 14) + 4, 90, 28, BLACK, false);
+    DrawEmptyRect(((int)(FRAME_BUFFER_WIDTH / 2) - 45), ((int)(FRAME_BUFFER_HEIGHT / 4) - 14) + 4, 90, 28, WHITE, false);
     DrawTextWithColor("press space", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 4), WHITE);
     DrawTextWithColor("to start", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, ((int)(FRAME_BUFFER_HEIGHT / 4)) + 9, WHITE);
     
-    DrawFullRect (((int)(FRAME_BUFFER_WIDTH / 2) - 45), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4 - 14, 90, 28, BLACK);
-    DrawEmptyRect(((int)(FRAME_BUFFER_WIDTH / 2) - 45), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4 - 14, 90, 28, WHITE);
+    DrawFullRect (((int)(FRAME_BUFFER_WIDTH / 2) - 45), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4 - 14, 90, 28, BLACK, false);
+    DrawEmptyRect(((int)(FRAME_BUFFER_WIDTH / 2) - 45), 3 * ((int)(FRAME_BUFFER_HEIGHT / 4)) + 4 - 14, 90, 28, WHITE, false);
     DrawTextWithColor("press escape", (int)(FRAME_BUFFER_WIDTH / 2), 90, WHITE); 
     DrawTextWithColor("to exit", ((int)(FRAME_BUFFER_WIDTH / 2)) + 1, 99, WHITE); 
 }
@@ -303,8 +303,8 @@ void UpdateScore()
 
 void DisplayGameOverBox()
 {
-    DrawFullRect((int)(FRAME_BUFFER_WIDTH / 2)  - 45, ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15 - 25, 90, 50, BLACK);
-    DrawEmptyRect((int)(FRAME_BUFFER_WIDTH / 2) - 45, ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15 - 25, 90, 50, RED);
+    DrawFullRect((int)(FRAME_BUFFER_WIDTH / 2)  - 45, ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15 - 25, 90, 50, BLACK, false);
+    DrawEmptyRect((int)(FRAME_BUFFER_WIDTH / 2) - 45, ((int)(FRAME_BUFFER_HEIGHT / 3)) + 15 - 25, 90, 50, RED, false);
     DrawTextWithColor("Game Over", (int)(FRAME_BUFFER_WIDTH / 2), (int)(FRAME_BUFFER_HEIGHT / 3) + 5, RED);
     DrawTextWithColor("press space", (int)(FRAME_BUFFER_WIDTH / 2), ((int)(FRAME_BUFFER_HEIGHT / 3)) + 20, RED);
     DrawTextWithColor("to restart", (int)(FRAME_BUFFER_WIDTH / 2),  ((int)(FRAME_BUFFER_HEIGHT / 3)) + 29, RED);
@@ -329,7 +329,7 @@ void UpdateRunnerGame()
 
         enemy->xPos -= gameOver ? 0 : adjustedGameSpeed;
 
-        DrawBitmap((unsigned char*)enemy->sprite.pixels, enemy->xPos, enemy->yPos, enemy->sprite.pixel_size_x, enemy->sprite.pixel_size_y);
+        DrawBitmap((unsigned char*)enemy->sprite.pixels, enemy->xPos, enemy->yPos, enemy->sprite.pixel_size_x, enemy->sprite.pixel_size_y, true);
         
         if (enemy->xPos + (int)enemy->sprite.pixel_size_x / 2 < 0)
         {
@@ -368,7 +368,7 @@ void Update()
         #ifdef __EMSCRIPTEN__
         nowTime = mfb_timer_now(timer);
         deltaTime = nowTime - lastRenderedFrameTime;
-        targetDeltaTime = 1.f/60.f;
+        targetDeltaTime = 1.f/68.f;
         if (deltaTime < targetDeltaTime) {
             // si on a pas depassé notre target delta time, on rend la main au browser puis on revient en haut de la boucle
             mfb_wait_sync(window);
@@ -397,7 +397,7 @@ void Update()
         HandleInputs();
 
         DrawBackground(gameSpeed, adjustedGameSpeed, gameOver, gameStarted);
-        DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y);
+        DrawBitmap((unsigned char*)player.sprite.pixels, player.xPos, player.yPos, player.sprite.pixel_size_x, player.sprite.pixel_size_y, true);
 
         if (!gameStarted)
         {

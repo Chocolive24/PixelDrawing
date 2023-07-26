@@ -5,8 +5,6 @@
 #include <stdarg.h>
 #include "stdio.h"
 
-#include "FrameAllocator.cpp"
-
 #define ANSI_RED    "\e[31m"
 #define ANSI_YELLOW "\e[93m"
 #define ANSI_WHITE  "\e[37m"
@@ -32,16 +30,16 @@
 #define COLLISION_OFFSET 2 // Amount to subtract from collision detection pixels
 
 #define ARR_LEN(arr) ((int) (sizeof(arr) / sizeof(*arr)))
+
 #define MAX(a, b) ((a > b) ? a : b)
 #define MIN(a, b) ((a < b) ? a : b)
-
 
 //Structs
 // ----------------------------------------------------------------------------------------------------------------------------------------------------
 
 struct Span // Envergure / espace -> une tranche de mémoire.
 {
-    uint8_t* ptr;
+    uint8_t* ptr; // uin8_t car les fichier binaire stockent des characters ascii.
     size_t size;
 };
 
@@ -159,9 +157,6 @@ char* Format(const char* format, ...)
 
     return buffer;
 }
-
-// MyLog("The score is : %i and then a string : %s", 42, "Hello String !");
-
 
 void windows_enable_colors_in_command_prompt()
 {

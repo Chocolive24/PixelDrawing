@@ -522,7 +522,7 @@ void UpdateLevelEditor()
 
         if (KeyWasPressed(KB_KEY_L))
         {
-            LoadLevel("assets//save5.level");
+            LoadLevel("assets//save6.level");
         }
 
         if ((KeyBeingPressed(KB_KEY_LEFT_CONTROL) || KeyBeingPressed(KB_KEY_LEFT_SUPER)) && KeyWasPressed(KB_KEY_Y)) // Z

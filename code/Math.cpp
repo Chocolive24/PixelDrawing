@@ -4,15 +4,14 @@
 
 #define GRAVITY 2.f
 
-struct Vector2F
+template <class T>
+struct Vector2
 {
-    float x, y;
+    T x, y;
 };
 
-struct Vector2Int
-{
-    int x, y;
-};
+using Vector2F = Vector2<float>;
+using Vector2Int = Vector2<int>;
 
 // Variables 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -321,7 +321,7 @@ void DrawMyText(const char* literalString, int xStart, int yStart)
     int charIdx = 0;
     char c;
 
-    int textWidth = strlen(literalString) * 7;
+    int textWidth = strlen(literalString) * 7; // char width
 
     xStart = xStart - (int)(textWidth / 2) - 7;
     yStart = yStart - (int)(9 / 2);

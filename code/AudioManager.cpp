@@ -103,7 +103,7 @@ SoundClip loadSoundClip(const char* filePath)
 
     uint8_t* file = loadEntireFile(filePath).ptr;
 
-    // Fichier wav on wikipedia for all info.
+    // File .wav on wikipedia for all info.
     // Check if the RIFF constant is in the file -> constant which is always in .wav files.
     assert(file[0] == 'R'); 
     assert(file[1] == 'I'); 
@@ -111,7 +111,7 @@ SoundClip loadSoundClip(const char* filePath)
     assert(file[3] == 'F'); 
 
     // goes 8 bytes faraway
-    file += 4; // RIFF 
+    file += 4; // RIFF  -> += 4 ascii char donc 4 bytes 
     file += 4; // size
 
     assert(file[0] == 'W');
@@ -162,7 +162,7 @@ SoundClip loadSoundClip(const char* filePath)
     uint64_t dataSize = *(uint32_t*)file;
     file += 4; // data size
 
-    int samplesCount = dataSize / sizeof(uint16_t) / 2;
+    int samplesCount = dataSize / sizeof(uint16_t) / 2; // car 16 bits per sample ?
 
     SoundClip clip = 
     {
@@ -175,7 +175,8 @@ SoundClip loadSoundClip(const char* filePath)
 
     for (int i = 0; i < samplesCount; i++)
     {
-        int16_t val = ((int)file[0] | file[1] << 8);
+        int16_t  val = ((int)file[0] | file[1] << 8); // car 16 bit per sample ?
+
         file += 4; // 4 because we want to skip one of the channel
 
         clip.samples[i] = (float)val / (INT16_MAX); // 2^16 / 2 -> pour faire aller de -1 à 1

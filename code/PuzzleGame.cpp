@@ -6,15 +6,12 @@
 #include "AudioManager.cpp"
 #include "GUI.cpp"
 #include "Drawing.cpp"
-#include "FrameAllocator.cpp"
 #include "Input.cpp"
 #include "GameLevels.cpp"
 #include "LevelEditor.cpp"
 #include "Player.cpp"
 #include "Utility.cpp"
 #include "Timer.cpp"
-
-#include "microui.h"
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -186,9 +183,9 @@ void Update()
         // DrawMyText(scoreText, 10, 10);
         // DrawMyText(scoreText2, 10, 20);
 
-        DrawMyText(Format("score : %i", score), 50, 50);
+        // DrawMyText(Format("score : %i", score), 50, 50);
 
-        LOG_FORMAT("Score : %i and a string :%s", score++, "I'm string");  
+        // LOG_FORMAT("Score : %i and a string :%s", score++, "I'm string");  
 
         memcpy(previousKeyStates, keyStates, sizeof(keyStates));
         memcpy(previousMouseButtonStates, mouseButtonStates, sizeof(mouseButtonStates));

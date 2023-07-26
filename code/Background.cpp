@@ -93,7 +93,7 @@ void DrawBackground(int gameSpeed, int adjustedGameSpeed, bool gameOver, bool ga
         groundTile->xPos -= gameOver || !gameStarted? 0 : adjustedGameSpeed;
 
         DrawBitmap(((unsigned char*)groundTile->sprite.pixels), groundTile->xPos, groundTile->yPos, 
-                    groundTile->sprite.pixel_size_x, groundTile->sprite.pixel_size_y);
+                    groundTile->sprite.pixel_size_x, groundTile->sprite.pixel_size_y, true);
 
         if (groundTile->xPos + (int)groundTile->sprite.pixel_size_x / 2 < 0)
         {
@@ -111,7 +111,7 @@ void DrawBackground(int gameSpeed, int adjustedGameSpeed, bool gameOver, bool ga
         moutainTile->xPos -= gameOver || !gameStarted ? 0 : (int)gameSpeed / 2;
 
         DrawBitmap(((unsigned char*)moutainTile->sprite.pixels), moutainTile->xPos, moutainTile->yPos, 
-                    moutainTile->sprite.pixel_size_x, moutainTile->sprite.pixel_size_y);
+                    moutainTile->sprite.pixel_size_x, moutainTile->sprite.pixel_size_y, true);
 
         if (moutainTile->xPos + (int)moutainTile->sprite.pixel_size_x / 2 < 0)
         {
